@@ -352,7 +352,7 @@
 
     <script type="module">
         import { encryptJSON, decryptJSON } from './crypto.js';
-        import { saveVault, loadVault } from './store.js';
+        import { saveVault, loadVault, syncOnStart } from './store.js';
         import { formatCurrency } from './app.js';
 
         // Check authentication
@@ -382,11 +382,35 @@
         // Load existing data
         async function loadData() {
             try {
-                const blob = await loadVault();
+                console.log('🔄 Starting data load with cloud sync...');
+                
+                // STEP 1: Check cloud for updates (using password for user ID)
+                const cloudData = await syncOnStart(password);
+                
+                let blob;
+                if (cloudData) {
+                    console.log('☁️ Using cloud data (newer or first time)');
+                    blob = cloudData;
+                    
+                    // Save cloud data locally for offline use
+                    try {
+                        await saveVault(cloudData, password);
+                        console.log('💾 Cloud data saved locally');
+                    } catch (saveError) {
+                        console.warn('⚠️ Could not save cloud data locally:', saveError);
+                    }
+                } else {
+                    // STEP 2: If no cloud data, use local
+                    console.log('💾 Using local data');
+                    blob = await loadVault();
+                }
+                
+                // STEP 3: Decrypt and load
                 if (blob) {
                     const decrypted = await decryptJSON(blob, password);
                     if (Array.isArray(decrypted)) {
                         records = decrypted;
+                        console.log('✅ Data loaded successfully:', records.length, 'records');
                     }
                 }
             } catch (error) {
@@ -497,7 +521,7 @@
         async function saveData() {
             try {
                 const encrypted = await encryptJSON(records, password);
-                await saveVault(encrypted);
+                await saveVault(encrypted, password); // Pass password for cloud sync
             } catch (error) {
                 console.error('Failed to save data:', error.message);
                 alert('فشل حفظ البيانات. الرجاء المحاولة مرة أخرى.');

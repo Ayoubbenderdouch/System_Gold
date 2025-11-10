@@ -39,26 +39,48 @@ async function initSupabase() {
 }
 
 /**
- * Get or create user ID (device-specific)
+ * Get or create user ID based on password hash
+ * This ensures same user ID across all devices with same password
+ * @param {string} password - Master password (optional, uses stored hash if available)
+ * @returns {Promise<string>}
  */
-function getUserId() {
+async function getUserId(password = null) {
+    // Try to get stored user ID first
     let userId = localStorage.getItem('vault_user_id');
-    if (!userId) {
+    
+    if (!userId && password) {
+        // Create user ID from password hash
+        // This ensures same ID on all devices with same password
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        // Use first 16 chars of hash as user ID
+        userId = 'user_' + hashHex.substring(0, 16);
+        localStorage.setItem('vault_user_id', userId);
+        console.log('🆔 User ID created from password hash:', userId);
+    } else if (!userId) {
+        // Fallback: device-specific ID (shouldn't happen normally)
         userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         localStorage.setItem('vault_user_id', userId);
+        console.warn('⚠️ Using device-specific user ID (no password provided)');
     }
+    
     return userId;
 }
 
 /**
  * Upload encrypted vault to Supabase
  * @param {Object} encryptedBlob - Encrypted data blob
+ * @param {string} password - Master password for user ID generation
  * @returns {Promise<void>}
  */
-export async function uploadToCloud(encryptedBlob) {
+export async function uploadToCloud(encryptedBlob, password) {
     try {
         const client = await initSupabase();
-        const userId = getUserId();
+        const userId = await getUserId(password);
         
         const dataToUpload = {
             user_id: userId,
@@ -77,7 +99,7 @@ export async function uploadToCloud(encryptedBlob) {
             throw error;
         }
         
-        console.log('☁️ Data synced to cloud');
+        console.log('☁️ Data synced to cloud for user:', userId);
         return data;
     } catch (error) {
         console.error('❌ Cloud sync failed:', error);
@@ -87,12 +109,15 @@ export async function uploadToCloud(encryptedBlob) {
 
 /**
  * Download encrypted vault from Supabase
+ * @param {string} password - Master password for user ID generation
  * @returns {Promise<Object|null>} - Encrypted blob or null
  */
-export async function downloadFromCloud() {
+export async function downloadFromCloud(password) {
     try {
         const client = await initSupabase();
-        const userId = getUserId();
+        const userId = await getUserId(password);
+        
+        console.log('🔍 Downloading cloud data for user:', userId);
         
         const { data, error } = await client
             .from('vaults')
@@ -111,7 +136,7 @@ export async function downloadFromCloud() {
         }
         
         if (data) {
-            console.log('☁️ Data downloaded from cloud');
+            console.log('☁️ Data downloaded from cloud, updated at:', data.updated_at);
             return data.encrypted_data;
         }
         
@@ -125,12 +150,13 @@ export async function downloadFromCloud() {
 /**
  * Check if cloud has newer data than local
  * @param {number} localTimestamp - Local data timestamp
+ * @param {string} password - Master password for user ID generation
  * @returns {Promise<boolean>}
  */
-export async function hasNewerCloudData(localTimestamp) {
+export async function hasNewerCloudData(localTimestamp, password) {
     try {
         const client = await initSupabase();
-        const userId = getUserId();
+        const userId = await getUserId(password);
         
         const { data, error } = await client
             .from('vaults')

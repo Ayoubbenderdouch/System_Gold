@@ -42,9 +42,10 @@ function openDB() {
 /**
  * Save encrypted vault blob to IndexedDB with automatic backup
  * @param {Object} blob - Encrypted blob to save
+ * @param {string} password - Master password for cloud sync (optional)
  * @returns {Promise<void>}
  */
-export async function saveVault(blob) {
+export async function saveVault(blob, password = null) {
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
@@ -83,8 +84,12 @@ export async function saveVault(blob) {
             
             // CLOUD SYNC: Upload to Supabase for cross-device access
             try {
-                await uploadToCloud(blob);
-                console.log('☁️ Data synced to cloud');
+                if (password) {
+                    await uploadToCloud(blob, password);
+                    console.log('☁️ Data synced to cloud');
+                } else {
+                    console.warn('⚠️ No password provided, skipping cloud sync');
+                }
             } catch (e) {
                 console.warn('⚠️ Cloud sync failed (offline?):', e);
                 // Continue anyway - local storage works
@@ -225,31 +230,36 @@ export async function listBackups() {
 /**
  * Sync with cloud on app start
  * Downloads cloud data if it's newer than local
- * @returns {Promise<Object|null>} - Cloud data if newer, null otherwise
+ * @param {string} password - Master password for cloud authentication
+ * @returns {Promise<Object|null>} - Cloud data if found, null otherwise
  */
-export async function syncOnStart() {
+export async function syncOnStart(password) {
     try {
         console.log('🔄 Checking for cloud updates...');
         
-        // Get local data
-        const localData = await loadVault();
+        if (!password) {
+            console.warn('⚠️ No password provided for cloud sync');
+            return null;
+        }
         
         // Get cloud data
-        const cloudData = await downloadFromCloud();
+        const cloudData = await downloadFromCloud(password);
         
         if (!cloudData) {
             console.log('ℹ️ No cloud data found');
             return null;
         }
         
+        // Get local data
+        const localData = await loadVault();
+        
         if (!localData) {
-            console.log('☁️ Downloading initial data from cloud...');
+            console.log('☁️ First time on this device - using cloud data');
             return cloudData;
         }
         
-        // Compare timestamps (if available in metadata)
-        // For now, we trust cloud as source of truth if it exists
-        console.log('✅ Cloud sync check complete');
+        // Always use cloud data if available (source of truth)
+        console.log('☁️ Using cloud data as source of truth');
         return cloudData;
         
     } catch (error) {
