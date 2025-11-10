@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خزنة مبيعات الذهب - تسجيل الدخول</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🔒 خزنة مبيعات الذهب</h1>
+            <p class="subtitle">أدخل كلمة المرور الرئيسية للوصول إلى بياناتك المشفرة</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="masterPassword">كلمة المرور الرئيسية</label>
+                    <input 
+                        type="password" 
+                        id="masterPassword" 
+                        name="masterPassword"
+                        required 
+                        autocomplete="current-password"
+                        placeholder="أدخل كلمة المرور الرئيسية"
+                    >
+                </div>
+                
+                <div id="lockoutMessage" class="error-message" style="display: none;"></div>
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+                
+                <button type="submit" id="loginButton" class="btn btn-primary">دخول</button>
+            </form>
+            
+            <div class="info-box">
+                <p><strong>ملاحظة أمنية:</strong></p>
+                <ul>
+                    <li>كلمة المرور لا يتم حفظها أبداً على الخادم</li>
+                    <li>إذا نسيت كلمة المرور، لا يمكن استرجاع البيانات</li>
+                    <li>يتم قفل الدخول لمدة 15 دقيقة بعد 5 محاولات فاشلة</li>
+                    <li>احتفظ بنسخة احتياطية دائماً</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { canEnterNow, registerAttempt, lockInfo } from './app.js';
+
+        const form = document.getElementById('loginForm');
+        const passwordInput = document.getElementById('masterPassword');
+        const loginButton = document.getElementById('loginButton');
+        const errorMessage = document.getElementById('errorMessage');
+        const lockoutMessage = document.getElementById('lockoutMessage');
+
+        // Check lockout status on load
+        function updateLockoutUI() {
+            const canEnter = canEnterNow();
+            
+            if (!canEnter) {
+                const info = lockInfo();
+                loginButton.disabled = true;
+                passwordInput.disabled = true;
+                lockoutMessage.style.display = 'block';
+                lockoutMessage.textContent = `تم قفل الدخول. المحاولات الفاشلة: ${info.attempts}. الوقت المتبقي: ${info.minutesLeft} دقيقة.`;
+                errorMessage.style.display = 'none';
+                
+                // Check again in 1 minute
+                setTimeout(updateLockoutUI, 60000);
+            } else {
+                loginButton.disabled = false;
+                passwordInput.disabled = false;
+                lockoutMessage.style.display = 'none';
+                
+                const info = lockInfo();
+                if (info.attempts > 0) {
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = `تحذير: ${info.attempts} محاولة فاشلة. سيتم القفل بعد ${5 - info.attempts} محاولات إضافية.`;
+                }
+            }
+        }
+
+        updateLockoutUI();
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!canEnterNow()) {
+                return;
+            }
+            
+            const password = passwordInput.value.trim();
+            
+            if (!password) {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'الرجاء إدخال كلمة المرور';
+                return;
+            }
+            
+            loginButton.disabled = true;
+            loginButton.textContent = 'جاري التحقق...';
+            errorMessage.style.display = 'none';
+            
+            try {
+                // Simple validation - just check if Web Crypto API exists
+                if (!window.crypto || !window.crypto.subtle) {
+                    throw new Error('Web Crypto API not supported');
+                }
+                
+                // Store password in sessionStorage
+                sessionStorage.setItem('vault_pass', password);
+                
+                // Register successful attempt
+                registerAttempt(true);
+                
+                // Redirect to sales page
+                window.location.href = './sales.html';
+                
+            } catch (error) {
+                console.error('Login error:', error.message);
+                
+                // Register failed attempt
+                registerAttempt(false);
+                
+                // Update UI
+                updateLockoutUI();
+                
+                if (canEnterNow()) {
+                    errorMessage.style.display = 'block';
+                    const info = lockInfo();
+                    if (info.attempts === 0) {
+                        errorMessage.textContent = 'كلمة مرور غير صحيحة';
+                    } else {
+                        errorMessage.textContent = `كلمة مرور غير صحيحة. المحاولات الفاشلة: ${info.attempts}/5`;
+                    }
+                }
+                
+                loginButton.disabled = false;
+                loginButton.textContent = 'دخول';
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>

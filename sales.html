@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خزنة مبيعات الذهب - إدارة المبيعات</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <h1>📊 إدارة مبيعات الذهب</h1>
+            <div class="header-actions">
+                <button id="exportPdfBtn" class="btn btn-secondary" title="تصدير PDF">تصدير PDF 📄</button>
+                <button id="lockBtn" class="btn btn-danger" title="تسجيل الخروج">قفل 🔒</button>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="dashboard">
+                <span class="tab-icon">📈</span>
+                <span>لوحة التحكم</span>
+            </button>
+            <button class="tab-btn" data-tab="sales">
+                <span class="tab-icon">💰</span>
+                <span>المبيعات</span>
+            </button>
+            <button class="tab-btn" data-tab="clients">
+                <span class="tab-icon">👥</span>
+                <span>العملاء</span>
+            </button>
+            <button class="tab-btn" data-tab="credits">
+                <span class="tab-icon">💳</span>
+                <span>الديون</span>
+            </button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div class="tab-content active" id="dashboard">
+            <div class="stats-grid">
+                <div class="stat-card stat-primary">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <div class="stat-label">إجمالي العملاء</div>
+                        <div class="stat-value" id="totalClientsCount">0</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-success">
+                    <div class="stat-icon">💵</div>
+                    <div class="stat-info">
+                        <div class="stat-label">إجمالي الإيرادات</div>
+                        <div class="stat-value" id="totalRevenueAmount">0 دج</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-warning">
+                    <div class="stat-icon">💳</div>
+                    <div class="stat-info">
+                        <div class="stat-label">إجمالي الديون</div>
+                        <div class="stat-value" id="totalDebtAmount">0 دج</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-info">
+                    <div class="stat-icon">⚖️</div>
+                    <div class="stat-info">
+                        <div class="stat-label">الذهب المباع</div>
+                        <div class="stat-value" id="totalGramsSold">0 غ</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 إحصائيات العملاء حسب الفترة</h2>
+                <div class="period-stats">
+                    <div class="period-card">
+                        <div class="period-header">
+                            <h3>📅 آخر 24 ساعة</h3>
+                        </div>
+                        <div class="period-content">
+                            <div class="period-item">
+                                <span class="period-label">عدد العملاء:</span>
+                                <span class="period-value" id="clients1Day">0</span>
+                            </div>
+                            <div class="period-item">
+                                <span class="period-label">المبيعات:</span>
+                                <span class="period-value" id="revenue1Day">0 دج</span>
+                            </div>
+                            <div class="period-item">
+                                <span class="period-label">الذهب:</span>
+                                <span class="period-value" id="grams1Day">0 غ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="period-card">
+                        <div class="period-header">
+                            <h3>📅 آخر 7 أيام</h3>
+                        </div>
+                        <div class="period-content">
+                            <div class="period-item">
+                                <span class="period-label">عدد العملاء:</span>
+                                <span class="period-value" id="clients7Days">0</span>
+                            </div>
+                            <div class="period-item">
+                                <span class="period-label">المبيعات:</span>
+                                <span class="period-value" id="revenue7Days">0 دج</span>
+                            </div>
+                            <div class="period-item">
+                                <span class="period-label">الذهب:</span>
+                                <span class="period-value" id="grams7Days">0 غ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="period-card">
+                        <div class="period-header">
+                            <h3>📅 آخر 14 يوم</h3>
+                        </div>
+                        <div class="period-content">
+                            <div class="period-item">
+                                <span class="period-label">عدد العملاء:</span>
+                                <span class="period-value" id="clients14Days">0</span>
+                            </div>
+                            <div class="period-item">
+                                <span class="period-label">المبيعات:</span>
+                                <span class="period-value" id="revenue14Days">0 دج</span>
+                            </div>
+                            <div class="period-item">
+                                <span class="period-label">الذهب:</span>
+                                <span class="period-value" id="grams14Days">0 غ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="period-card">
+                        <div class="period-header">
+                            <h3>📅 آخر 30 يوم</h3>
+                        </div>
+                        <div class="period-content">
+                            <div class="period-item">
+                                <span class="period-label">عدد العملاء:</span>
+                                <span class="period-value" id="clients30Days">0</span>
+                            </div>
+                            <div class="period-item">
+                                <span class="period-label">المبيعات:</span>
+                                <span class="period-value" id="revenue30Days">0 دج</span>
+                            </div>
+                            <div class="period-item">
+                                <span class="period-label">الذهب:</span>
+                                <span class="period-value" id="grams30Days">0 غ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Tab -->
+        <div class="tab-content" id="sales">
+
+            <div class="card">
+                <h2>إضافة عملية بيع جديدة</h2>
+            <form id="salesForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">الاسم الأول</label>
+                        <input type="text" id="firstName" name="firstName" required placeholder="الاسم الأول">
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">اسم العائلة</label>
+                        <input type="text" id="lastName" name="lastName" required placeholder="اسم العائلة">
+                    </div>
+                </div>
+                
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="idNumber">رقم الهوية</label>
+                            <input type="text" id="idNumber" name="idNumber" required placeholder="رقم الهوية الوطنية">
+                        </div>
+                        <div class="form-group">
+                            <label for="phoneNumber">رقم الهاتف 📱</label>
+                            <input type="tel" id="phoneNumber" name="phoneNumber" required placeholder="0555123456">
+                        </div>
+                    </div>                <div class="form-row">
+                    <div class="form-group">
+                        <label for="grams">الوزن (غرام)</label>
+                        <input type="number" id="grams" name="grams" required step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="price">السعر الإجمالي (دج)</label>
+                        <input type="number" id="price" name="price" required step="0.01" min="0" placeholder="0.00">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="paid">المبلغ المدفوع (دج)</label>
+                    <input type="number" id="paid" name="paid" required step="0.01" min="0" placeholder="0.00">
+                    <small style="display: block; margin-top: 0.5rem; color: #64748b;">
+                        💡 إذا كان المبلغ أقل من السعر، سيتم إضافة دين للعميل تلقائياً
+                    </small>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">إضافة العملية ➕</button>
+            </form>
+            </div>
+
+            <div class="card">
+                <h2>سجل المبيعات</h2>
+                <div id="salesTableContainer">
+                    <p class="empty-message">لا توجد عمليات بيع مسجلة بعد</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clients Tab -->
+        <div class="tab-content" id="clients">
+            <div class="card">
+                <h2>� قائمة العملاء</h2>
+                <div id="clientsListContainer">
+                    <p class="empty-message">لا يوجد عملاء مسجلين بعد</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credits Tab -->
+        <div class="tab-content" id="credits">
+            <div class="card">
+                <h2>➕ إضافة عميل مدين جديد</h2>
+                <form id="creditForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="creditFirstName">الاسم الأول</label>
+                            <input type="text" id="creditFirstName" name="creditFirstName" required placeholder="الاسم الأول">
+                        </div>
+                        <div class="form-group">
+                            <label for="creditLastName">اسم العائلة</label>
+                            <input type="text" id="creditLastName" name="creditLastName" required placeholder="اسم العائلة">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="creditIdNumber">رقم الهوية</label>
+                            <input type="text" id="creditIdNumber" name="creditIdNumber" required placeholder="رقم الهوية الوطنية">
+                        </div>
+                        <div class="form-group">
+                            <label for="creditPhoneNumber">رقم الهاتف 📱</label>
+                            <input type="tel" id="creditPhoneNumber" name="creditPhoneNumber" required placeholder="0555123456">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="creditTotalAmount">المبلغ الإجمالي (دج)</label>
+                            <input type="number" id="creditTotalAmount" name="creditTotalAmount" required step="0.01" min="0.01" placeholder="0.00">
+                            <small style="display: block; margin-top: 0.5rem; color: #6c757d;">
+                                المبلغ الكلي الذي يجب على العميل دفعه
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="creditPaidAmount">المبلغ المدفوع (دج)</label>
+                            <input type="number" id="creditPaidAmount" name="creditPaidAmount" required step="0.01" min="0" placeholder="0.00">
+                            <small style="display: block; margin-top: 0.5rem; color: #6c757d;">
+                                المبلغ الذي دفعه العميل حتى الآن
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="creditNote">ملاحظة (اختياري)</label>
+                        <input type="text" id="creditNote" name="creditNote" placeholder="سبب الدين أو ملاحظة إضافية">
+                    </div>
+                    
+                    <div class="credit-summary" id="creditSummary" style="display: none;">
+                        <div class="summary-item">
+                            <span>المبلغ المتبقي:</span>
+                            <strong id="remainingAmount" style="color: #c92a2a; font-size: 1.25rem;">0.00 دج</strong>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">إضافة العميل المدين ➕</button>
+                </form>
+            </div>
+
+            <div class="card" id="creditClientsSection">
+                <h2>💳 قائمة العملاء المدينين</h2>
+                <div id="creditClientsContainer">
+                    <p class="empty-message">لا توجد ديون مسجلة</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💰 إضافة دفعة جديدة</h2>
+                <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="modalClientInfo" style="margin-bottom: 1rem; font-weight: 600;"></p>
+                <p id="modalDebtInfo" style="margin-bottom: 1.5rem; color: #dc2626; font-size: 1.1rem;"></p>
+                
+                <form id="paymentForm">
+                    <div class="form-group">
+                        <label for="paymentAmount">المبلغ المدفوع (دج)</label>
+                        <input type="number" id="paymentAmount" name="paymentAmount" required step="0.01" min="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentNote">ملاحظة (اختياري)</label>
+                        <input type="text" id="paymentNote" name="paymentNote" placeholder="ملاحظة أو وصف للدفعة">
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">تسجيل الدفعة ✅</button>
+                        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closePaymentModal()">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { encryptJSON, decryptJSON } from './crypto.js';
+        import { saveVault, loadVault } from './store.js';
+        import { formatCurrency } from './app.js';
+
+        // Check authentication
+        const password = sessionStorage.getItem('vault_pass');
+        if (!password) {
+            window.location.href = 'index.html';
+            throw new Error('Unauthorized');
+        }
+
+        let records = [];
+        let currentPaymentRecordId = null;
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.dataset.tab;
+                
+                // Update active states
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+
+        // Load existing data
+        async function loadData() {
+            try {
+                const blob = await loadVault();
+                if (blob) {
+                    const decrypted = await decryptJSON(blob, password);
+                    if (Array.isArray(decrypted)) {
+                        records = decrypted;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load data:', error.message);
+                alert('فشل تحميل البيانات. قد تكون كلمة المرور غير صحيحة.');
+                sessionStorage.removeItem('vault_pass');
+                window.location.href = 'index.html';
+            }
+            renderDashboard();
+            renderTable();
+            renderClientsList();
+            renderCreditClients();
+        }
+
+        // Calculate statistics
+        function calculateStats() {
+            const now = new Date();
+            const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000);
+            const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+            const fourteenDaysAgo = new Date(now - 14 * 24 * 60 * 60 * 1000);
+            const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+            // Get unique clients
+            const uniqueClients = new Set();
+            records.forEach(r => uniqueClients.add(r.idNumber));
+
+            // Calculate totals
+            let totalRevenue = 0;
+            let totalDebt = 0;
+            let totalGrams = 0;
+
+            const stats1Day = { clients: new Set(), revenue: 0, grams: 0 };
+            const stats7Days = { clients: new Set(), revenue: 0, grams: 0 };
+            const stats14Days = { clients: new Set(), revenue: 0, grams: 0 };
+            const stats30Days = { clients: new Set(), revenue: 0, grams: 0 };
+
+            records.forEach(record => {
+                const recordDate = new Date(record.date);
+                const totalPaid = getTotalPaid(record);
+                const debt = record.price - totalPaid;
+
+                totalRevenue += totalPaid;
+                totalDebt += debt;
+                totalGrams += record.grams;
+
+                // Period statistics
+                if (recordDate >= oneDayAgo) {
+                    stats1Day.clients.add(record.idNumber);
+                    stats1Day.revenue += record.price;
+                    stats1Day.grams += record.grams;
+                }
+                if (recordDate >= sevenDaysAgo) {
+                    stats7Days.clients.add(record.idNumber);
+                    stats7Days.revenue += record.price;
+                    stats7Days.grams += record.grams;
+                }
+                if (recordDate >= fourteenDaysAgo) {
+                    stats14Days.clients.add(record.idNumber);
+                    stats14Days.revenue += record.price;
+                    stats14Days.grams += record.grams;
+                }
+                if (recordDate >= thirtyDaysAgo) {
+                    stats30Days.clients.add(record.idNumber);
+                    stats30Days.revenue += record.price;
+                    stats30Days.grams += record.grams;
+                }
+            });
+
+            return {
+                totalClients: uniqueClients.size,
+                totalRevenue,
+                totalDebt,
+                totalGrams,
+                period1Day: { clients: stats1Day.clients.size, revenue: stats1Day.revenue, grams: stats1Day.grams },
+                period7Days: { clients: stats7Days.clients.size, revenue: stats7Days.revenue, grams: stats7Days.grams },
+                period14Days: { clients: stats14Days.clients.size, revenue: stats14Days.revenue, grams: stats14Days.grams },
+                period30Days: { clients: stats30Days.clients.size, revenue: stats30Days.revenue, grams: stats30Days.grams }
+            };
+        }
+
+        // Render dashboard
+        function renderDashboard() {
+            const stats = calculateStats();
+
+            document.getElementById('totalClientsCount').textContent = stats.totalClients;
+            document.getElementById('totalRevenueAmount').textContent = formatCurrency(stats.totalRevenue);
+            document.getElementById('totalDebtAmount').textContent = formatCurrency(stats.totalDebt);
+            document.getElementById('totalGramsSold').textContent = stats.totalGrams.toFixed(2) + ' غ';
+
+            document.getElementById('clients1Day').textContent = stats.period1Day.clients;
+            document.getElementById('revenue1Day').textContent = formatCurrency(stats.period1Day.revenue);
+            document.getElementById('grams1Day').textContent = stats.period1Day.grams.toFixed(2) + ' غ';
+
+            document.getElementById('clients7Days').textContent = stats.period7Days.clients;
+            document.getElementById('revenue7Days').textContent = formatCurrency(stats.period7Days.revenue);
+            document.getElementById('grams7Days').textContent = stats.period7Days.grams.toFixed(2) + ' غ';
+
+            document.getElementById('clients14Days').textContent = stats.period14Days.clients;
+            document.getElementById('revenue14Days').textContent = formatCurrency(stats.period14Days.revenue);
+            document.getElementById('grams14Days').textContent = stats.period14Days.grams.toFixed(2) + ' غ';
+
+            document.getElementById('clients30Days').textContent = stats.period30Days.clients;
+            document.getElementById('revenue30Days').textContent = formatCurrency(stats.period30Days.revenue);
+            document.getElementById('grams30Days').textContent = stats.period30Days.grams.toFixed(2) + ' غ';
+        }
+
+        // Save data
+        async function saveData() {
+            try {
+                const encrypted = await encryptJSON(records, password);
+                await saveVault(encrypted);
+            } catch (error) {
+                console.error('Failed to save data:', error.message);
+                alert('فشل حفظ البيانات. الرجاء المحاولة مرة أخرى.');
+                throw error;
+            }
+        }
+
+        // Calculate total paid including payment history
+        function getTotalPaid(record) {
+            let total = record.paid || 0;
+            if (record.payments && Array.isArray(record.payments)) {
+                total += record.payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+            }
+            return total;
+        }
+
+        // Render table
+        function renderTable() {
+            const container = document.getElementById('salesTableContainer');
+            
+            if (records.length === 0) {
+                container.innerHTML = '<p class="empty-message">لا توجد عمليات بيع مسجلة بعد</p>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'sales-table';
+            
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>العميل</th>
+                        <th>رقم الهوية</th>
+                        <th>النوع</th>
+                        <th>الوزن (غ)</th>
+                        <th>السعر</th>
+                        <th>المدفوع</th>
+                        <th>المتبقي</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${records.map((record, index) => {
+                        const date = new Date(record.date);
+                        const dateStr = date.toLocaleDateString('ar-DZ', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        const customerName = `${record.firstName} ${record.lastName}`;
+                        const totalPaid = getTotalPaid(record);
+                        const due = record.price - totalPaid;
+                        const hasPaidFully = due <= 0;
+                        const isCreditOnly = record.isCreditOnly === true;
+                        
+                        return `
+                            <tr class="${isCreditOnly ? 'credit-only-row' : ''}">
+                                <td>${dateStr}</td>
+                                <td>
+                                    ${customerName}
+                                    ${record.phoneNumber ? '<br><small style="color: #0c8599;">📱 ' + record.phoneNumber + '</small>' : ''}
+                                    ${record.note ? '<br><small style="color: #6c757d;">(' + record.note + ')</small>' : ''}
+                                </td>
+                                <td>${record.idNumber}</td>
+                                <td>
+                                    ${isCreditOnly 
+                                        ? '<span class="badge badge-info">دين فقط</span>' 
+                                        : '<span class="badge badge-primary">بيع</span>'
+                                    }
+                                </td>
+                                <td>${record.grams > 0 ? record.grams.toFixed(2) : '-'}</td>
+                                <td>${formatCurrency(record.price)}</td>
+                                <td>${formatCurrency(totalPaid)}</td>
+                                <td class="${due > 0 ? 'due-amount' : 'paid-full'}">${formatCurrency(due)}</td>
+                                <td>
+                                    ${hasPaidFully 
+                                        ? '<span class="badge badge-success">مدفوع ✓</span>' 
+                                        : `<span class="badge badge-warning">دين</span>`
+                                    }
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            `;
+            
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+
+        // Render clients list
+        function renderClientsList() {
+            const container = document.getElementById('clientsListContainer');
+            
+            // Group records by client
+            const clientsMap = new Map();
+            
+            records.forEach(record => {
+                const clientKey = record.idNumber;
+                if (!clientsMap.has(clientKey)) {
+                    clientsMap.set(clientKey, {
+                        firstName: record.firstName,
+                        lastName: record.lastName,
+                        idNumber: record.idNumber,
+                        transactions: [],
+                        totalSpent: 0,
+                        totalPaid: 0,
+                        totalDebt: 0,
+                        totalGrams: 0
+                    });
+                }
+                
+                const client = clientsMap.get(clientKey);
+                const totalPaid = getTotalPaid(record);
+                const debt = record.price - totalPaid;
+                
+                client.transactions.push(record);
+                client.totalSpent += record.price;
+                client.totalPaid += totalPaid;
+                client.totalDebt += debt;
+                client.totalGrams += record.grams;
+            });
+            
+            if (clientsMap.size === 0) {
+                container.innerHTML = '<p class="empty-message">لا يوجد عملاء مسجلين بعد</p>';
+                return;
+            }
+            
+            const clientsArray = Array.from(clientsMap.values()).sort((a, b) => b.totalSpent - a.totalSpent);
+            
+            container.innerHTML = `
+                <div class="clients-grid">
+                    ${clientsArray.map(client => {
+                        const customerName = `${client.firstName} ${client.lastName}`;
+                        const hasDebt = client.totalDebt > 0;
+                        
+                        return `
+                            <div class="client-card ${hasDebt ? 'client-has-debt' : ''}">
+                                <div class="client-header">
+                                    <div class="client-avatar">${client.firstName.charAt(0)}${client.lastName.charAt(0)}</div>
+                                    <div>
+                                        <h3 class="client-name">${customerName}</h3>
+                                        <p class="client-id">رقم الهوية: ${client.idNumber}</p>
+                                        ${client.transactions[0].phoneNumber ? `<p class="client-phone">📱 ${client.transactions[0].phoneNumber}</p>` : ''}
+                                    </div>
+                                </div>
+                                <div class="client-stats">
+                                    <div class="client-stat">
+                                        <span class="client-stat-label">عدد العمليات</span>
+                                        <span class="client-stat-value">${client.transactions.length}</span>
+                                    </div>
+                                    <div class="client-stat">
+                                        <span class="client-stat-label">إجمالي المشتريات</span>
+                                        <span class="client-stat-value">${formatCurrency(client.totalSpent)}</span>
+                                    </div>
+                                    <div class="client-stat">
+                                        <span class="client-stat-label">المدفوع</span>
+                                        <span class="client-stat-value">${formatCurrency(client.totalPaid)}</span>
+                                    </div>
+                                    <div class="client-stat">
+                                        <span class="client-stat-label">الديون</span>
+                                        <span class="client-stat-value ${hasDebt ? 'text-danger' : 'text-success'}">
+                                            ${formatCurrency(client.totalDebt)}
+                                        </span>
+                                    </div>
+                                    <div class="client-stat">
+                                        <span class="client-stat-label">الذهب المشترى</span>
+                                        <span class="client-stat-value">${client.totalGrams.toFixed(2)} غ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // Render credit clients section
+        function renderCreditClients() {
+            const container = document.getElementById('creditClientsContainer');
+            
+            // Filter records with outstanding debt
+            const debtors = records
+                .map((record, index) => ({ ...record, originalIndex: index }))
+                .filter(record => {
+                    const totalPaid = getTotalPaid(record);
+                    return record.price - totalPaid > 0;
+                })
+                .sort((a, b) => {
+                    const dueA = a.price - getTotalPaid(a);
+                    const dueB = b.price - getTotalPaid(b);
+                    return dueB - dueA; // Highest debt first
+                });
+            
+            if (debtors.length === 0) {
+                container.innerHTML = '<p class="empty-message">لا توجد ديون مسجلة</p>';
+                return;
+            }
+            
+            container.innerHTML = debtors.map(record => {
+                const customerName = `${record.firstName} ${record.lastName}`;
+                const totalPaid = getTotalPaid(record);
+                const due = record.price - totalPaid;
+                const lastPaymentDate = record.payments && record.payments.length > 0 
+                    ? new Date(record.payments[record.payments.length - 1].date).toLocaleDateString('ar-DZ')
+                    : 'لم يتم الدفع بعد';
+                
+                return `
+                    <div class="credit-card">
+                        <div class="credit-header">
+                            <div>
+                                <h3>${customerName}</h3>
+                                <p class="credit-id">رقم الهوية: ${record.idNumber}</p>
+                                ${record.phoneNumber ? `<p class="credit-phone">📱 ${record.phoneNumber}</p>` : ''}
+                            </div>
+                            <div class="credit-amount">${formatCurrency(due)}</div>
+                        </div>
+                        <div class="credit-details">
+                            <div class="credit-detail-item">
+                                <span>السعر الكلي:</span>
+                                <strong>${formatCurrency(record.price)}</strong>
+                            </div>
+                            <div class="credit-detail-item">
+                                <span>المدفوع:</span>
+                                <strong>${formatCurrency(totalPaid)}</strong>
+                            </div>
+                            <div class="credit-detail-item">
+                                <span>تاريخ آخر دفعة:</span>
+                                <strong>${lastPaymentDate}</strong>
+                            </div>
+                        </div>
+                        <div class="credit-actions">
+                            ${record.phoneNumber ? `<a href="tel:${record.phoneNumber}" class="btn btn-success btn-sm">اتصال 📞</a>` : ''}
+                            <button class="btn btn-primary btn-sm" onclick="openPaymentModal('${record.id || record.originalIndex}')">
+                                إضافة دفعة 💰
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="showPaymentHistory('${record.id || record.originalIndex}')">
+                                سجل الدفعات 📋
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Modal functions
+        window.openPaymentModal = function(recordId) {
+            const record = records.find((r, i) => (r.id || i) == recordId);
+            if (!record) return;
+            
+            currentPaymentRecordId = recordId;
+            const customerName = `${record.firstName} ${record.lastName}`;
+            const totalPaid = getTotalPaid(record);
+            const due = record.price - totalPaid;
+            
+            document.getElementById('modalClientInfo').textContent = `العميل: ${customerName} (${record.idNumber})`;
+            document.getElementById('modalDebtInfo').textContent = `المبلغ المتبقي: ${formatCurrency(due)}`;
+            document.getElementById('paymentAmount').max = due;
+            document.getElementById('paymentModal').style.display = 'flex';
+        };
+
+        window.closePaymentModal = function() {
+            document.getElementById('paymentModal').style.display = 'none';
+            document.getElementById('paymentForm').reset();
+            currentPaymentRecordId = null;
+        };
+
+        window.showPaymentHistory = function(recordId) {
+            const record = records.find((r, i) => (r.id || i) == recordId);
+            if (!record) return;
+            
+            const customerName = `${record.firstName} ${record.lastName}`;
+            const payments = record.payments || [];
+            
+            if (payments.length === 0) {
+                alert(`لا توجد دفعات مسجلة للعميل: ${customerName}`);
+                return;
+            }
+            
+            let historyHTML = `<div style="background: white; padding: 2rem; border-radius: 8px; max-width: 600px; margin: 0 auto;">`;
+            historyHTML += `<h3 style="margin-bottom: 1rem;">📋 سجل دفعات: ${customerName}</h3>`;
+            historyHTML += `<table class="payment-history-table" style="width: 100%; border-collapse: collapse;">`;
+            historyHTML += `<thead><tr><th>التاريخ</th><th>المبلغ</th><th>ملاحظة</th></tr></thead><tbody>`;
+            
+            payments.forEach(payment => {
+                const date = new Date(payment.date).toLocaleString('ar-DZ', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                historyHTML += `
+                    <tr>
+                        <td>${date}</td>
+                        <td style="color: #16a34a; font-weight: 600;">${formatCurrency(payment.amount)}</td>
+                        <td>${payment.note || '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            historyHTML += `</tbody></table></div>`;
+            
+            const historyWindow = window.open('', 'سجل الدفعات', 'width=700,height=500');
+            historyWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>سجل الدفعات - ${customerName}</title>
+                    <link rel="stylesheet" href="styles.css">
+                    <style>
+                        body { padding: 2rem; background: #f1f5f9; }
+                        .payment-history-table th { background: #f1f5f9; padding: 0.75rem; text-align: right; border-bottom: 2px solid #e2e8f0; }
+                        .payment-history-table td { padding: 0.75rem; border-bottom: 1px solid #e2e8f0; }
+                    </style>
+                </head>
+                <body>${historyHTML}</body>
+                </html>
+            `);
+        };
+
+        // Credit form - calculate remaining amount in real-time
+        document.getElementById('creditTotalAmount').addEventListener('input', updateCreditSummary);
+        document.getElementById('creditPaidAmount').addEventListener('input', updateCreditSummary);
+
+        function updateCreditSummary() {
+            const total = parseFloat(document.getElementById('creditTotalAmount').value) || 0;
+            const paid = parseFloat(document.getElementById('creditPaidAmount').value) || 0;
+            const remaining = total - paid;
+            
+            const summaryDiv = document.getElementById('creditSummary');
+            const remainingSpan = document.getElementById('remainingAmount');
+            
+            if (total > 0) {
+                summaryDiv.style.display = 'block';
+                remainingSpan.textContent = formatCurrency(remaining);
+                remainingSpan.style.color = remaining > 0 ? '#c92a2a' : '#2f9e44';
+            } else {
+                summaryDiv.style.display = 'none';
+            }
+        }
+
+        // Credit form submission
+        document.getElementById('creditForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const totalAmount = parseFloat(formData.get('creditTotalAmount'));
+            const paidAmount = parseFloat(formData.get('creditPaidAmount'));
+            
+            if (paidAmount > totalAmount) {
+                alert('المبلغ المدفوع لا يمكن أن يكون أكبر من المبلغ الإجمالي');
+                return;
+            }
+            
+            const newRecord = {
+                id: Date.now().toString(),
+                firstName: formData.get('creditFirstName').trim(),
+                lastName: formData.get('creditLastName').trim(),
+                idNumber: formData.get('creditIdNumber').trim(),
+                phoneNumber: formData.get('creditPhoneNumber').trim(),
+                grams: 0, // No gold transaction, just credit
+                price: totalAmount,
+                paid: paidAmount,
+                date: new Date().toISOString(),
+                payments: [],
+                note: formData.get('creditNote').trim(),
+                isCreditOnly: true // Mark as credit-only entry
+            };
+            
+            // Prepend to records
+            records.unshift(newRecord);
+            
+            // Save
+            try {
+                await saveData();
+                renderDashboard();
+                renderTable();
+                renderClientsList();
+                renderCreditClients();
+                e.target.reset();
+                document.getElementById('creditSummary').style.display = 'none';
+                document.getElementById('creditFirstName').focus();
+                
+                const remaining = totalAmount - paidAmount;
+                alert(`تم إضافة العميل المدين بنجاح!\n\nالعميل: ${newRecord.firstName} ${newRecord.lastName}\nالمبلغ الإجمالي: ${formatCurrency(totalAmount)}\nالمبلغ المدفوع: ${formatCurrency(paidAmount)}\nالمبلغ المتبقي: ${formatCurrency(remaining)}`);
+            } catch (error) {
+                // Remove the record if save failed
+                records.shift();
+                alert('فشل حفظ البيانات');
+            }
+        });
+
+        // Payment form submission
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const recordIndex = records.findIndex((r, i) => (r.id || i) == currentPaymentRecordId);
+            if (recordIndex === -1) return;
+            
+            const formData = new FormData(e.target);
+            const amount = parseFloat(formData.get('paymentAmount'));
+            const note = formData.get('paymentNote').trim();
+            
+            const record = records[recordIndex];
+            const totalPaid = getTotalPaid(record);
+            const due = record.price - totalPaid;
+            
+            if (amount > due) {
+                alert(`المبلغ المدخل (${formatCurrency(amount)}) أكبر من المبلغ المتبقي (${formatCurrency(due)})`);
+                return;
+            }
+            
+            // Initialize payments array if not exists
+            if (!record.payments) {
+                record.payments = [];
+            }
+            
+            // Add payment
+            record.payments.push({
+                amount: amount,
+                note: note,
+                date: new Date().toISOString()
+            });
+            
+            // Save
+            try {
+                await saveData();
+                renderDashboard();
+                renderTable();
+                renderClientsList();
+                renderCreditClients();
+                closePaymentModal();
+                alert(`تم تسجيل الدفعة بنجاح: ${formatCurrency(amount)}`);
+            } catch (error) {
+                // Remove the payment if save failed
+                record.payments.pop();
+                alert('فشل حفظ الدفعة');
+            }
+        });
+
+        // Form submission
+        document.getElementById('salesForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const newRecord = {
+                id: Date.now().toString(),
+                firstName: formData.get('firstName').trim(),
+                lastName: formData.get('lastName').trim(),
+                idNumber: formData.get('idNumber').trim(),
+                phoneNumber: formData.get('phoneNumber').trim(),
+                grams: parseFloat(formData.get('grams')),
+                price: parseFloat(formData.get('price')),
+                paid: parseFloat(formData.get('paid')),
+                date: new Date().toISOString(),
+                payments: []
+            };
+
+            // Prepend to records
+            records.unshift(newRecord);
+            
+            // Save
+            try {
+                await saveData();
+                renderDashboard();
+                renderTable();
+                renderClientsList();
+                renderCreditClients();
+                e.target.reset();
+                document.getElementById('firstName').focus();
+                
+                // Show alert if there's remaining debt
+                const due = newRecord.price - newRecord.paid;
+                if (due > 0) {
+                    setTimeout(() => {
+                        alert(`تم إضافة العملية. المبلغ المتبقي: ${formatCurrency(due)}\nالعميل: ${newRecord.firstName} ${newRecord.lastName}`);
+                    }, 100);
+                }
+            } catch (error) {
+                // Remove the record if save failed
+                records.shift();
+            }
+        });
+
+        // PDF Export functionality
+        document.getElementById('exportPdfBtn').addEventListener('click', () => {
+            const stats = calculateStats();
+            const today = new Date().toLocaleDateString('ar-DZ', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            // Create print window
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>تقرير مبيعات الذهب</title>
+                    <style>
+                        body {
+                            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                            padding: 20mm;
+                            color: #212529;
+                            direction: rtl;
+                        }
+                        .header {
+                            text-align: center;
+                            border-bottom: 3px solid #1a5490;
+                            padding-bottom: 20px;
+                            margin-bottom: 30px;
+                        }
+                        .header h1 {
+                            color: #1a5490;
+                            margin: 0 0 10px 0;
+                        }
+                        .header p {
+                            color: #6c757d;
+                            margin: 5px 0;
+                        }
+                        .stats-grid {
+                            display: grid;
+                            grid-template-columns: repeat(4, 1fr);
+                            gap: 15px;
+                            margin-bottom: 30px;
+                        }
+                        .stat-box {
+                            border: 2px solid #dee2e6;
+                            border-radius: 8px;
+                            padding: 15px;
+                            text-align: center;
+                        }
+                        .stat-label {
+                            font-size: 12px;
+                            color: #6c757d;
+                            margin-bottom: 5px;
+                        }
+                        .stat-value {
+                            font-size: 20px;
+                            font-weight: bold;
+                            color: #1a5490;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 30px;
+                        }
+                        th, td {
+                            border: 1px solid #dee2e6;
+                            padding: 10px;
+                            text-align: right;
+                            font-size: 11px;
+                        }
+                        th {
+                            background: #f5f7fa;
+                            font-weight: 600;
+                            color: #212529;
+                        }
+                        .debt-row {
+                            background: #fff9f9;
+                        }
+                        .paid-row {
+                            background: #f0f9ff;
+                        }
+                        .footer {
+                            text-align: center;
+                            margin-top: 40px;
+                            padding-top: 20px;
+                            border-top: 2px solid #dee2e6;
+                            color: #6c757d;
+                            font-size: 11px;
+                        }
+                        .debt-text {
+                            color: #c92a2a;
+                            font-weight: bold;
+                        }
+                        .paid-text {
+                            color: #2f9e44;
+                            font-weight: bold;
+                        }
+                        @media print {
+                            body { padding: 10mm; }
+                            .stat-box { break-inside: avoid; }
+                            table { page-break-inside: auto; }
+                            tr { page-break-inside: avoid; page-break-after: auto; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>📊 تقرير مبيعات الذهب</h1>
+                        <p>التاريخ: ${today}</p>
+                        <p>عدد العمليات: ${records.length}</p>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">إجمالي العملاء</div>
+                            <div class="stat-value">${stats.totalClients}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">إجمالي الإيرادات</div>
+                            <div class="stat-value">${formatCurrency(stats.totalRevenue)}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">إجمالي الديون</div>
+                            <div class="stat-value" style="color: #c92a2a;">${formatCurrency(stats.totalDebt)}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">الذهب المباع</div>
+                            <div class="stat-value">${stats.totalGrams.toFixed(2)} غ</div>
+                        </div>
+                    </div>
+                    
+                    <h2 style="color: #1a5490; margin-bottom: 15px;">جدول المبيعات</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>العميل</th>
+                                <th>الهاتف</th>
+                                <th>رقم الهوية</th>
+                                <th>النوع</th>
+                                <th>الوزن (غ)</th>
+                                <th>السعر</th>
+                                <th>المدفوع</th>
+                                <th>المتبقي</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${records.map(record => {
+                                const date = new Date(record.date);
+                                const dateStr = date.toLocaleDateString('ar-DZ', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit'
+                                });
+                                const customerName = record.firstName + ' ' + record.lastName;
+                                const totalPaid = getTotalPaid(record);
+                                const due = record.price - totalPaid;
+                                const isCreditOnly = record.isCreditOnly === true;
+                                const rowClass = due > 0 ? 'debt-row' : 'paid-row';
+                                
+                                return `
+                                    <tr class="${rowClass}">
+                                        <td>${dateStr}</td>
+                                        <td>${customerName}</td>
+                                        <td>${record.phoneNumber || '-'}</td>
+                                        <td>${record.idNumber}</td>
+                                        <td>${isCreditOnly ? 'دين فقط' : 'بيع'}</td>
+                                        <td>${record.grams > 0 ? record.grams.toFixed(2) : '-'}</td>
+                                        <td>${formatCurrency(record.price)}</td>
+                                        <td>${formatCurrency(totalPaid)}</td>
+                                        <td class="${due > 0 ? 'debt-text' : 'paid-text'}">${formatCurrency(due)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="footer">
+                        <p><strong>خزنة مبيعات الذهب المشفرة</strong></p>
+                        <p>تم إنشاء هذا التقرير تلقائياً في ${new Date().toLocaleString('ar-DZ')}</p>
+                    </div>
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            
+            // Wait for content to load then print
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 500);
+        });
+
+
+
+        // Lock functionality
+        document.getElementById('lockBtn').addEventListener('click', () => {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                sessionStorage.removeItem('vault_pass');
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>
