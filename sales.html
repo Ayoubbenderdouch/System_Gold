@@ -209,6 +209,15 @@
 
             <div class="card">
                 <h2>سجل المبيعات</h2>
+                
+                <!-- Search Box for Sales -->
+                <div class="search-box" style="margin-bottom: 1.5rem;">
+                    <input type="text" 
+                           id="salesSearchInput" 
+                           placeholder="🔍 البحث بالاسم أو رقم الهاتف..." 
+                           style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
+                </div>
+                
                 <div id="salesTableContainer">
                     <p class="empty-message">لا توجد عمليات بيع مسجلة بعد</p>
                 </div>
@@ -219,6 +228,15 @@
         <div class="tab-content" id="clients">
             <div class="card">
                 <h2>� قائمة العملاء</h2>
+                
+                <!-- Search Box for Clients -->
+                <div class="search-box" style="margin-bottom: 1.5rem;">
+                    <input type="text" 
+                           id="clientsSearchInput" 
+                           placeholder="🔍 البحث بالاسم أو رقم الهاتف..." 
+                           style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
+                </div>
+                
                 <div id="clientsListContainer">
                     <p class="empty-message">لا يوجد عملاء مسجلين بعد</p>
                 </div>
@@ -287,6 +305,15 @@
 
             <div class="card" id="creditClientsSection">
                 <h2>💳 قائمة العملاء المدينين</h2>
+                
+                <!-- Search Box for Credits -->
+                <div class="search-box" style="margin-bottom: 1.5rem;">
+                    <input type="text" 
+                           id="creditsSearchInput" 
+                           placeholder="🔍 البحث بالاسم أو رقم الهاتف..." 
+                           style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
+                </div>
+                
                 <div id="creditClientsContainer">
                     <p class="empty-message">لا توجد ديون مسجلة</p>
                 </div>
@@ -491,8 +518,18 @@
         function renderTable() {
             const container = document.getElementById('salesTableContainer');
             
-            if (records.length === 0) {
-                container.innerHTML = '<p class="empty-message">لا توجد عمليات بيع مسجلة بعد</p>';
+            // Filter records based on search
+            let filteredRecords = records;
+            if (currentSalesFilter) {
+                filteredRecords = records.filter(record => {
+                    const fullName = `${record.firstName} ${record.lastName}`.toLowerCase();
+                    const phone = (record.phoneNumber || '').toLowerCase();
+                    return fullName.includes(currentSalesFilter) || phone.includes(currentSalesFilter);
+                });
+            }
+            
+            if (filteredRecords.length === 0) {
+                container.innerHTML = '<p class="empty-message">لا توجد نتائج</p>';
                 return;
             }
 
@@ -514,7 +551,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    ${records.map((record, index) => {
+                    ${filteredRecords.map((record, index) => {
                         const date = new Date(record.date);
                         const dateStr = date.toLocaleDateString('ar-DZ', {
                             year: 'numeric',
@@ -578,6 +615,7 @@
                         firstName: record.firstName,
                         lastName: record.lastName,
                         idNumber: record.idNumber,
+                        phoneNumber: record.phoneNumber,
                         transactions: [],
                         totalSpent: 0,
                         totalPaid: 0,
@@ -602,7 +640,21 @@
                 return;
             }
             
-            const clientsArray = Array.from(clientsMap.values()).sort((a, b) => b.totalSpent - a.totalSpent);
+            let clientsArray = Array.from(clientsMap.values()).sort((a, b) => b.totalSpent - a.totalSpent);
+            
+            // Filter clients based on search
+            if (currentClientsFilter) {
+                clientsArray = clientsArray.filter(client => {
+                    const fullName = `${client.firstName} ${client.lastName}`.toLowerCase();
+                    const phone = (client.phoneNumber || '').toLowerCase();
+                    return fullName.includes(currentClientsFilter) || phone.includes(currentClientsFilter);
+                });
+            }
+            
+            if (clientsArray.length === 0) {
+                container.innerHTML = '<p class="empty-message">لا توجد نتائج</p>';
+                return;
+            }
             
             container.innerHTML = `
                 <div class="clients-grid">
@@ -656,7 +708,7 @@
             const container = document.getElementById('creditClientsContainer');
             
             // Filter records with outstanding debt
-            const debtors = records
+            let debtors = records
                 .map((record, index) => ({ ...record, originalIndex: index }))
                 .filter(record => {
                     const totalPaid = getTotalPaid(record);
@@ -668,8 +720,17 @@
                     return dueB - dueA; // Highest debt first
                 });
             
+            // Filter debtors based on search
+            if (currentCreditsFilter) {
+                debtors = debtors.filter(record => {
+                    const fullName = `${record.firstName} ${record.lastName}`.toLowerCase();
+                    const phone = (record.phoneNumber || '').toLowerCase();
+                    return fullName.includes(currentCreditsFilter) || phone.includes(currentCreditsFilter);
+                });
+            }
+            
             if (debtors.length === 0) {
-                container.innerHTML = '<p class="empty-message">لا توجد ديون مسجلة</p>';
+                container.innerHTML = '<p class="empty-message">لا توجد نتائج</p>';
                 return;
             }
             
@@ -1163,6 +1224,27 @@
                 sessionStorage.removeItem('vault_pass');
                 window.location.href = 'index.html';
             }
+        });
+
+        // Search functionality for Sales
+        let currentSalesFilter = '';
+        document.getElementById('salesSearchInput').addEventListener('input', (e) => {
+            currentSalesFilter = e.target.value.toLowerCase().trim();
+            renderTable();
+        });
+
+        // Search functionality for Clients
+        let currentClientsFilter = '';
+        document.getElementById('clientsSearchInput').addEventListener('input', (e) => {
+            currentClientsFilter = e.target.value.toLowerCase().trim();
+            renderClientsList();
+        });
+
+        // Search functionality for Credits
+        let currentCreditsFilter = '';
+        document.getElementById('creditsSearchInput').addEventListener('input', (e) => {
+            currentCreditsFilter = e.target.value.toLowerCase().trim();
+            renderCreditClients();
         });
 
         // Initialize

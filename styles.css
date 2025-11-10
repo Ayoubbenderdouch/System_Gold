@@ -1210,3 +1210,19 @@ body:has(.card h1:contains("خزنة")) {
         break-inside: avoid;
     }
 }
+
+/* Search Box Styling */
+.search-box input {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+.search-box input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+.search-box input::placeholder {
+    color: #94a3b8;
+}
