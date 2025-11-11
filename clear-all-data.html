@@ -232,6 +232,17 @@
     </div>
 
     <script>
+        // Auto-start deletion on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Show a simple prompt immediately
+            setTimeout(() => {
+                const btn = document.getElementById('deleteBtn');
+                if (btn) {
+                    btn.click();
+                }
+            }, 500);
+        });
+
         async function deleteAllData() {
             // Confirm again
             const confirmed = confirm(
@@ -241,7 +252,10 @@
                 'اضغط "موافق" للمتابعة أو "إلغاء" للرجوع.'
             );
 
-            if (!confirmed) return;
+            if (!confirmed) {
+                window.location.href = 'sales.html';
+                return;
+            }
 
             // Disable button and show loading
             document.getElementById('deleteBtn').disabled = true;
