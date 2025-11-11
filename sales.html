@@ -37,6 +37,10 @@
                 <span class="tab-icon">💳</span>
                 <span>الديون</span>
             </button>
+            <button class="tab-btn" data-tab="savings">
+                <span class="tab-icon">💰</span>
+                <span>المدخرات</span>
+            </button>
         </div>
 
         <!-- Dashboard Tab -->
@@ -71,6 +75,14 @@
                     <div class="stat-info">
                         <div class="stat-label">الذهب المباع</div>
                         <div class="stat-value" id="totalGramsSold">0 غ</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-right: 4px solid #16a34a;">
+                    <div class="stat-icon" style="background: #16a34a; color: white;">💰</div>
+                    <div class="stat-info">
+                        <div class="stat-label">إجمالي المدخرات</div>
+                        <div class="stat-value" id="totalSavingsAmount" style="color: #16a34a;">0 دج</div>
                     </div>
                 </div>
             </div>
@@ -322,6 +334,74 @@
                 </div>
             </div>
         </div>
+
+        <!-- Savings Tab -->
+        <div class="tab-content" id="savings">
+            <div class="card">
+                <h2>💰 إضافة مدخرات لعميل</h2>
+                <p class="subtitle" style="color: #64748b; margin-bottom: 1.5rem;">
+                    العميل يدفع مبلغاً للادخار عندك لشراء منتج لاحقاً (مثل خاتم، سوار، إلخ)
+                </p>
+                
+                <form id="savingsForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="savingsFirstName">الاسم الأول</label>
+                            <input type="text" id="savingsFirstName" name="savingsFirstName" required placeholder="الاسم الأول">
+                        </div>
+                        <div class="form-group">
+                            <label for="savingsLastName">اسم العائلة</label>
+                            <input type="text" id="savingsLastName" name="savingsLastName" required placeholder="اسم العائلة">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="savingsIdNumber">رقم الهوية (اختياري)</label>
+                            <input type="text" id="savingsIdNumber" name="savingsIdNumber" placeholder="رقم الهوية الوطنية">
+                        </div>
+                        <div class="form-group">
+                            <label for="savingsPhoneNumber">رقم الهاتف 📱 (اختياري)</label>
+                            <input type="tel" id="savingsPhoneNumber" name="savingsPhoneNumber" placeholder="0555123456">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="savingsAmount">المبلغ المدخر (دج)</label>
+                        <input type="number" id="savingsAmount" name="savingsAmount" required step="0.01" min="0.01" placeholder="0.00">
+                        <small style="display: block; margin-top: 0.5rem; color: #64748b;">
+                            💡 المبلغ الذي يدفعه العميل للادخار
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="savingsGoal">الهدف من الادخار (اختياري)</label>
+                        <input type="text" id="savingsGoal" name="savingsGoal" placeholder="مثال: خاتم ذهب، سوار، عقد، إلخ">
+                        <small style="display: block; margin-top: 0.5rem; color: #64748b;">
+                            💍 ما الذي يريد العميل شراءه؟
+                        </small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">إضافة المدخرات 💰</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>💎 قائمة العملاء المدخرين</h2>
+                
+                <!-- Search Box for Savings -->
+                <div class="search-box" style="margin-bottom: 1.5rem;">
+                    <input type="text" 
+                           id="savingsSearchInput" 
+                           placeholder="🔍 البحث بالاسم أو رقم الهاتف..." 
+                           style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
+                </div>
+                
+                <div id="savingsClientsContainer">
+                    <p class="empty-message">لا توجد مدخرات مسجلة</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Payment Modal -->
@@ -426,6 +506,7 @@
             renderTable();
             renderClientsList();
             renderCreditClients();
+            renderSavingsClients();
         }
 
         // Calculate statistics
@@ -444,6 +525,7 @@
             let totalRevenue = 0;
             let totalDebt = 0;
             let totalGrams = 0;
+            let totalSavings = 0;
 
             const stats1Day = { clients: new Set(), revenue: 0, grams: 0 };
             const stats7Days = { clients: new Set(), revenue: 0, grams: 0 };
@@ -455,8 +537,14 @@
                 const totalPaid = getTotalPaid(record);
                 const debt = record.price - totalPaid;
 
-                totalRevenue += totalPaid;
-                totalDebt += debt;
+                // Calculate savings (negative paid = customer has credit with us)
+                if (totalPaid < 0) {
+                    totalSavings += -totalPaid;
+                } else {
+                    totalRevenue += totalPaid;
+                    totalDebt += debt;
+                }
+                
                 totalGrams += record.grams;
 
                 // Period statistics
@@ -487,6 +575,7 @@
                 totalRevenue,
                 totalDebt,
                 totalGrams,
+                totalSavings,
                 period1Day: { clients: stats1Day.clients.size, revenue: stats1Day.revenue, grams: stats1Day.grams },
                 period7Days: { clients: stats7Days.clients.size, revenue: stats7Days.revenue, grams: stats7Days.grams },
                 period14Days: { clients: stats14Days.clients.size, revenue: stats14Days.revenue, grams: stats14Days.grams },
@@ -502,6 +591,7 @@
             document.getElementById('totalRevenueAmount').textContent = formatCurrency(stats.totalRevenue);
             document.getElementById('totalDebtAmount').textContent = formatCurrency(stats.totalDebt);
             document.getElementById('totalGramsSold').textContent = stats.totalGrams.toFixed(2) + ' غ';
+            document.getElementById('totalSavingsAmount').textContent = formatCurrency(stats.totalSavings);
 
             document.getElementById('clients1Day').textContent = stats.period1Day.clients;
             document.getElementById('revenue1Day').textContent = formatCurrency(stats.period1Day.revenue);
@@ -1283,6 +1373,192 @@
             currentCreditsFilter = e.target.value.toLowerCase().trim();
             renderCreditClients();
         });
+
+        // Search functionality for Savings
+        let currentSavingsFilter = '';
+        document.getElementById('savingsSearchInput').addEventListener('input', (e) => {
+            currentSavingsFilter = e.target.value.toLowerCase().trim();
+            renderSavingsClients();
+        });
+
+        // Savings form submission
+        document.getElementById('savingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            
+            // Generate unique ID if not provided
+            const savingsIdNumber = formData.get('savingsIdNumber').trim() || `AUTO_${Date.now()}`;
+            const savingsPhoneNumber = formData.get('savingsPhoneNumber').trim() || '';
+            const savingsAmount = parseFloat(formData.get('savingsAmount'));
+            
+            const newRecord = {
+                id: Date.now().toString(),
+                firstName: formData.get('savingsFirstName').trim(),
+                lastName: formData.get('savingsLastName').trim(),
+                idNumber: savingsIdNumber,
+                phoneNumber: savingsPhoneNumber,
+                grams: 0,
+                price: 0,
+                paid: -savingsAmount, // Negative = customer has credit with us
+                date: new Date().toISOString(),
+                payments: [],
+                note: formData.get('savingsGoal').trim() || '',
+                isSavings: true, // Mark as savings entry
+                employee: sessionStorage.getItem('user_role') === 'employee' ? 
+                         JSON.parse(sessionStorage.getItem('employee_data') || '{}').name : undefined
+            };
+            
+            // Prepend to records
+            records.unshift(newRecord);
+            
+            // Save
+            try {
+                await saveData();
+                renderDashboard();
+                renderTable();
+                renderClientsList();
+                renderCreditClients();
+                renderSavingsClients();
+                e.target.reset();
+                document.getElementById('savingsFirstName').focus();
+                
+                alert(`تم إضافة المدخرات بنجاح! ✅\n\nالعميل: ${newRecord.firstName} ${newRecord.lastName}\nالمبلغ المدخر: ${formatCurrency(savingsAmount)}\n${newRecord.note ? 'الهدف: ' + newRecord.note : ''}`);
+            } catch (error) {
+                alert('فشل حفظ البيانات. الرجاء المحاولة مرة أخرى.');
+            }
+        });
+
+        // Render savings clients
+        function renderSavingsClients() {
+            const container = document.getElementById('savingsClientsContainer');
+            
+            // Filter only savings records (where paid is negative = they have credit with us)
+            let savingsRecords = records.filter(r => r.isSavings === true || r.paid < 0);
+            
+            // Group by client
+            const clientsMap = new Map();
+            
+            savingsRecords.forEach(record => {
+                const clientKey = record.idNumber;
+                if (!clientsMap.has(clientKey)) {
+                    clientsMap.set(clientKey, {
+                        firstName: record.firstName,
+                        lastName: record.lastName,
+                        idNumber: record.idNumber,
+                        phoneNumber: record.phoneNumber,
+                        transactions: [],
+                        totalSaved: 0,
+                        goal: record.note
+                    });
+                }
+                
+                const client = clientsMap.get(clientKey);
+                const totalPaid = getTotalPaid(record);
+                const savings = -totalPaid; // Negative means they have credit
+                
+                if (savings > 0) {
+                    client.transactions.push(record);
+                    client.totalSaved += savings;
+                    if (record.note && !client.goal) {
+                        client.goal = record.note;
+                    }
+                }
+            });
+            
+            if (clientsMap.size === 0) {
+                container.innerHTML = '<p class="empty-message">لا توجد مدخرات مسجلة</p>';
+                return;
+            }
+            
+            let clientsArray = Array.from(clientsMap.values()).sort((a, b) => b.totalSaved - a.totalSaved);
+            
+            // Filter based on search
+            if (currentSavingsFilter) {
+                clientsArray = clientsArray.filter(client => {
+                    const fullName = `${client.firstName} ${client.lastName}`.toLowerCase();
+                    const phone = (client.phoneNumber || '').toLowerCase();
+                    return fullName.includes(currentSavingsFilter) || phone.includes(currentSavingsFilter);
+                });
+            }
+            
+            if (clientsArray.length === 0) {
+                container.innerHTML = '<p class="empty-message">لا توجد نتائج</p>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="clients-grid">
+                    ${clientsArray.map(client => {
+                        const customerName = `${client.firstName} ${client.lastName}`;
+                        
+                        return `
+                            <div class="client-card" style="border-right: 4px solid #16a34a;">
+                                <div class="client-header">
+                                    <div class="client-avatar" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
+                                        ${client.firstName.charAt(0)}${client.lastName.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <h3 class="client-name">${customerName}</h3>
+                                        <p class="client-id">رقم الهوية: ${client.idNumber}</p>
+                                        ${client.phoneNumber ? `<p class="client-phone">📱 ${client.phoneNumber}</p>` : ''}
+                                    </div>
+                                </div>
+                                ${client.goal ? `
+                                    <div style="background: #f0fdf4; padding: 0.75rem; border-radius: 8px; margin: 1rem 0;">
+                                        <span style="color: #15803d; font-weight: 600;">💍 الهدف:</span>
+                                        <span style="color: #166534; margin-right: 0.5rem;">${client.goal}</span>
+                                    </div>
+                                ` : ''}
+                                <div class="client-stats">
+                                    <div class="client-stat">
+                                        <span class="client-stat-label">عدد الدفعات</span>
+                                        <span class="client-stat-value">${client.transactions.length}</span>
+                                    </div>
+                                    <div class="client-stat">
+                                        <span class="client-stat-label">المبلغ المدخر</span>
+                                        <span class="client-stat-value" style="color: #16a34a; font-size: 1.5rem; font-weight: 700;">
+                                            ${formatCurrency(client.totalSaved)}
+                                        </span>
+                                    </div>
+                                </div>
+                                <button onclick="withdrawSavings('${client.idNumber}')" class="btn btn-success" style="width: 100%; margin-top: 1rem;">
+                                    💰 استخدام المدخرات للشراء
+                                </button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // Withdraw savings (convert to sale)
+        window.withdrawSavings = function(idNumber) {
+            const client = records.find(r => r.idNumber === idNumber && (r.isSavings === true || r.paid < 0));
+            if (!client) return;
+            
+            const customerName = `${client.firstName} ${client.lastName}`;
+            const totalSaved = -getTotalPaid(client);
+            
+            const message = `استخدام مدخرات ${customerName}؟\n\nالمبلغ المدخر: ${formatCurrency(totalSaved)}\n\nسيتم نقلك إلى تبويب المبيعات لإتمام عملية الشراء.\nيمكنك استخدام المبلغ المدخر كدفعة.`;
+            
+            if (confirm(message)) {
+                // Switch to sales tab
+                document.querySelector('[data-tab="sales"]').click();
+                
+                // Pre-fill the form
+                document.getElementById('firstName').value = client.firstName;
+                document.getElementById('lastName').value = client.lastName;
+                document.getElementById('idNumber').value = client.idNumber;
+                document.getElementById('phoneNumber').value = client.phoneNumber || '';
+                document.getElementById('paid').value = totalSaved;
+                
+                // Focus on grams field
+                document.getElementById('grams').focus();
+                
+                alert(`✅ تم تعبئة بيانات العميل!\n\nالمبلغ المدخر (${formatCurrency(totalSaved)}) تم إدراجه كمبلغ مدفوع.\n\nأدخل الآن وزن الذهب والسعر الإجمالي لإتمام البيع.`);
+            }
+        };
 
         // Initialize
         loadData();
