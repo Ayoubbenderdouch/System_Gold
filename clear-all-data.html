@@ -316,24 +316,51 @@
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmZHZtbW1yc3Fydmt6dmxiY25xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA5NzY3MzQsImV4cCI6MjA0NjU1MjczNH0.RJ6lGTVp9XDKbQVD2-OMdA0VL3FhXHU-F_mGYQeT2co';
 
             try {
-                // Get current user (based on logged in session)
-                const userRole = sessionStorage.getItem('user_role');
-                const employeeData = sessionStorage.getItem('employee_data');
+                // Get password from sessionStorage (used as user_id)
+                const password = sessionStorage.getItem('vault_password');
                 
-                let userId;
-                if (userRole === 'admin') {
-                    userId = 'admin';
-                } else if (userRole === 'employee' && employeeData) {
-                    const employee = JSON.parse(employeeData);
-                    userId = employee.id;
-                } else {
-                    // No user logged in, can't delete cloud data
-                    console.log('⚠️ No user logged in, skipping cloud deletion');
+                if (!password) {
+                    console.log('⚠️ No password found, trying to get user_id from session');
+                    
+                    // Fallback: try to get from user session
+                    const userRole = sessionStorage.getItem('user_role');
+                    const employeeData = sessionStorage.getItem('employee_data');
+                    
+                    let userId;
+                    if (userRole === 'admin') {
+                        userId = 'admin';
+                    } else if (userRole === 'employee' && employeeData) {
+                        const employee = JSON.parse(employeeData);
+                        userId = employee.id;
+                    } else {
+                        console.log('⚠️ No credentials found, skipping cloud deletion');
+                        return;
+                    }
+                    
+                    // Delete with userId
+                    await deleteFromSupabase(SUPABASE_URL, SUPABASE_ANON_KEY, userId);
                     return;
                 }
 
-                // Delete all records for this user
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/gold_records?user_id=eq.${userId}`, {
+                // Hash password to get user_id
+                const encoder = new TextEncoder();
+                const data = encoder.encode(password);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const userId = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                console.log('🔑 Using password-based user_id for deletion');
+                await deleteFromSupabase(SUPABASE_URL, SUPABASE_ANON_KEY, userId);
+
+            } catch (error) {
+                console.warn('⚠️ Supabase deletion error:', error.message);
+                // Don't throw error, just log it
+            }
+        }
+
+        async function deleteFromSupabase(url, key, userId) {
+            // Delete all records for this user
+            const response = await fetch(`${url}/rest/v1/gold_records?user_id=eq.${userId}`, {
                     method: 'DELETE',
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
@@ -343,14 +370,10 @@
                     }
                 });
 
-                if (response.ok) {
-                    console.log('✅ Supabase data deleted successfully');
-                } else {
-                    console.warn('⚠️ Could not delete Supabase data (might not exist)');
-                }
-            } catch (error) {
-                console.warn('⚠️ Supabase deletion skipped:', error.message);
-                // Don't throw error, just log it
+            if (response.ok) {
+                console.log('✅ Supabase data deleted successfully');
+            } else {
+                console.warn('⚠️ Could not delete Supabase data:', response.status);
             }
         }
 
