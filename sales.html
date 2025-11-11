@@ -623,27 +623,29 @@
         // Load existing data
         async function loadData() {
             try {
-                console.log('🔄 Starting data load with cloud sync...');
+                console.log('🔄 Starting data load...');
                 
-                // STEP 1: Check cloud for updates (using password for user ID)
-                const cloudData = await syncOnStart(password);
+                // STEP 1: Try loading from local storage first
+                console.log('💾 Loading from local storage');
+                let blob = await loadVault();
                 
-                let blob;
-                if (cloudData) {
-                    console.log('☁️ Using cloud data (newer or first time)');
-                    blob = cloudData;
+                // STEP 2: If no local data, check cloud (only if local is empty)
+                if (!blob) {
+                    console.log('☁️ No local data, checking cloud...');
+                    const cloudData = await syncOnStart(password);
                     
-                    // Save cloud data locally for offline use
-                    try {
-                        await saveVault(cloudData, password);
-                        console.log('💾 Cloud data saved locally');
-                    } catch (saveError) {
-                        console.warn('⚠️ Could not save cloud data locally:', saveError);
+                    if (cloudData) {
+                        console.log('☁️ Using cloud data');
+                        blob = cloudData;
+                        
+                        // Save cloud data locally for offline use
+                        try {
+                            await saveVault(cloudData, password);
+                            console.log('💾 Cloud data saved locally');
+                        } catch (saveError) {
+                            console.warn('⚠️ Could not save cloud data locally:', saveError);
+                        }
                     }
-                } else {
-                    // STEP 2: If no cloud data, use local
-                    console.log('💾 Using local data');
-                    blob = await loadVault();
                 }
                 
                 // STEP 3: Decrypt and load
