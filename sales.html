@@ -109,8 +109,12 @@
                                 <span class="period-value" id="revenue1Day">0 دج</span>
                             </div>
                             <div class="period-item">
-                                <span class="period-label">الذهب:</span>
+                                <span class="period-label">الذهب المباع:</span>
                                 <span class="period-value" id="grams1Day">0 غ</span>
+                            </div>
+                            <div class="period-item" style="border-top: 1px solid #e5e7eb; padding-top: 0.5rem; margin-top: 0.5rem;">
+                                <span class="period-label" style="color: #059669;">🛒 الذهب المشترى:</span>
+                                <span class="period-value" style="color: #059669;" id="purchased1Day">0 غ</span>
                             </div>
                         </div>
                     </div>
@@ -130,8 +134,12 @@
                                 <span class="period-value" id="revenue7Days">0 دج</span>
                             </div>
                             <div class="period-item">
-                                <span class="period-label">الذهب:</span>
+                                <span class="period-label">الذهب المباع:</span>
                                 <span class="period-value" id="grams7Days">0 غ</span>
+                            </div>
+                            <div class="period-item" style="border-top: 1px solid #e5e7eb; padding-top: 0.5rem; margin-top: 0.5rem;">
+                                <span class="period-label" style="color: #059669;">🛒 الذهب المشترى:</span>
+                                <span class="period-value" style="color: #059669;" id="purchased7Days">0 غ</span>
                             </div>
                         </div>
                     </div>
@@ -151,8 +159,12 @@
                                 <span class="period-value" id="revenue14Days">0 دج</span>
                             </div>
                             <div class="period-item">
-                                <span class="period-label">الذهب:</span>
+                                <span class="period-label">الذهب المباع:</span>
                                 <span class="period-value" id="grams14Days">0 غ</span>
+                            </div>
+                            <div class="period-item" style="border-top: 1px solid #e5e7eb; padding-top: 0.5rem; margin-top: 0.5rem;">
+                                <span class="period-label" style="color: #059669;">🛒 الذهب المشترى:</span>
+                                <span class="period-value" style="color: #059669;" id="purchased14Days">0 غ</span>
                             </div>
                         </div>
                     </div>
@@ -172,8 +184,12 @@
                                 <span class="period-value" id="revenue30Days">0 دج</span>
                             </div>
                             <div class="period-item">
-                                <span class="period-label">الذهب:</span>
+                                <span class="period-label">الذهب المباع:</span>
                                 <span class="period-value" id="grams30Days">0 غ</span>
+                            </div>
+                            <div class="period-item" style="border-top: 1px solid #e5e7eb; padding-top: 0.5rem; margin-top: 0.5rem;">
+                                <span class="period-label" style="color: #059669;">🛒 الذهب المشترى:</span>
+                                <span class="period-value" style="color: #059669;" id="purchased30Days">0 غ</span>
                             </div>
                         </div>
                     </div>
@@ -505,7 +521,7 @@
             </div>
             <div class="modal-body">
                 <!-- Summary Cards -->
-                <div class="stats-grid" style="margin-bottom: 2rem;">
+                <div class="stats-grid" style="margin-bottom: 2rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
                     <div class="stat-card stat-success">
                         <div class="stat-icon">💵</div>
                         <div class="stat-info">
@@ -525,6 +541,13 @@
                         <div class="stat-info">
                             <div class="stat-label">الذهب المباع</div>
                             <div class="stat-value" id="periodTotalGrams">0 غ</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white;">
+                        <div class="stat-icon">🛒</div>
+                        <div class="stat-info">
+                            <div class="stat-label">الذهب المشترى</div>
+                            <div class="stat-value" id="periodTotalPurchased">0 غ</div>
                         </div>
                     </div>
                 </div>
@@ -672,10 +695,10 @@
             let totalGrams = 0;
             let totalSavings = 0;
 
-            const stats1Day = { clients: new Set(), revenue: 0, grams: 0 };
-            const stats7Days = { clients: new Set(), revenue: 0, grams: 0 };
-            const stats14Days = { clients: new Set(), revenue: 0, grams: 0 };
-            const stats30Days = { clients: new Set(), revenue: 0, grams: 0 };
+            const stats1Day = { clients: new Set(), revenue: 0, grams: 0, purchasedGrams: 0, purchasedAmount: 0 };
+            const stats7Days = { clients: new Set(), revenue: 0, grams: 0, purchasedGrams: 0, purchasedAmount: 0 };
+            const stats14Days = { clients: new Set(), revenue: 0, grams: 0, purchasedGrams: 0, purchasedAmount: 0 };
+            const stats30Days = { clients: new Set(), revenue: 0, grams: 0, purchasedGrams: 0, purchasedAmount: 0 };
 
             records.forEach(record => {
                 const recordDate = new Date(record.date);
@@ -715,16 +738,62 @@
                 }
             });
 
+            // Calculate purchase statistics (gold bought FROM customers)
+            purchases.forEach(purchase => {
+                const purchaseDate = new Date(purchase.date);
+                
+                if (purchaseDate >= oneDayAgo) {
+                    stats1Day.purchasedGrams += purchase.grams;
+                    stats1Day.purchasedAmount += purchase.price;
+                }
+                if (purchaseDate >= sevenDaysAgo) {
+                    stats7Days.purchasedGrams += purchase.grams;
+                    stats7Days.purchasedAmount += purchase.price;
+                }
+                if (purchaseDate >= fourteenDaysAgo) {
+                    stats14Days.purchasedGrams += purchase.grams;
+                    stats14Days.purchasedAmount += purchase.price;
+                }
+                if (purchaseDate >= thirtyDaysAgo) {
+                    stats30Days.purchasedGrams += purchase.grams;
+                    stats30Days.purchasedAmount += purchase.price;
+                }
+            });
+
             return {
                 totalClients: uniqueClients.size,
                 totalRevenue,
                 totalDebt,
                 totalGrams,
                 totalSavings,
-                period1Day: { clients: stats1Day.clients.size, revenue: stats1Day.revenue, grams: stats1Day.grams },
-                period7Days: { clients: stats7Days.clients.size, revenue: stats7Days.revenue, grams: stats7Days.grams },
-                period14Days: { clients: stats14Days.clients.size, revenue: stats14Days.revenue, grams: stats14Days.grams },
-                period30Days: { clients: stats30Days.clients.size, revenue: stats30Days.revenue, grams: stats30Days.grams }
+                period1Day: { 
+                    clients: stats1Day.clients.size, 
+                    revenue: stats1Day.revenue, 
+                    grams: stats1Day.grams,
+                    purchasedGrams: stats1Day.purchasedGrams,
+                    purchasedAmount: stats1Day.purchasedAmount
+                },
+                period7Days: { 
+                    clients: stats7Days.clients.size, 
+                    revenue: stats7Days.revenue, 
+                    grams: stats7Days.grams,
+                    purchasedGrams: stats7Days.purchasedGrams,
+                    purchasedAmount: stats7Days.purchasedAmount
+                },
+                period14Days: { 
+                    clients: stats14Days.clients.size, 
+                    revenue: stats14Days.revenue, 
+                    grams: stats14Days.grams,
+                    purchasedGrams: stats14Days.purchasedGrams,
+                    purchasedAmount: stats14Days.purchasedAmount
+                },
+                period30Days: { 
+                    clients: stats30Days.clients.size, 
+                    revenue: stats30Days.revenue, 
+                    grams: stats30Days.grams,
+                    purchasedGrams: stats30Days.purchasedGrams,
+                    purchasedAmount: stats30Days.purchasedAmount
+                }
             };
         }
 
@@ -741,18 +810,22 @@
             document.getElementById('clients1Day').textContent = stats.period1Day.clients;
             document.getElementById('revenue1Day').textContent = formatCurrency(stats.period1Day.revenue);
             document.getElementById('grams1Day').textContent = stats.period1Day.grams.toFixed(2) + ' غ';
+            document.getElementById('purchased1Day').textContent = stats.period1Day.purchasedGrams.toFixed(2) + ' غ';
 
             document.getElementById('clients7Days').textContent = stats.period7Days.clients;
             document.getElementById('revenue7Days').textContent = formatCurrency(stats.period7Days.revenue);
             document.getElementById('grams7Days').textContent = stats.period7Days.grams.toFixed(2) + ' غ';
+            document.getElementById('purchased7Days').textContent = stats.period7Days.purchasedGrams.toFixed(2) + ' غ';
 
             document.getElementById('clients14Days').textContent = stats.period14Days.clients;
             document.getElementById('revenue14Days').textContent = formatCurrency(stats.period14Days.revenue);
             document.getElementById('grams14Days').textContent = stats.period14Days.grams.toFixed(2) + ' غ';
+            document.getElementById('purchased14Days').textContent = stats.period14Days.purchasedGrams.toFixed(2) + ' غ';
 
             document.getElementById('clients30Days').textContent = stats.period30Days.clients;
             document.getElementById('revenue30Days').textContent = formatCurrency(stats.period30Days.revenue);
             document.getElementById('grams30Days').textContent = stats.period30Days.grams.toFixed(2) + ' غ';
+            document.getElementById('purchased30Days').textContent = stats.period30Days.purchasedGrams.toFixed(2) + ' غ';
         }
 
         // Save data
@@ -1716,8 +1789,14 @@
                 return recordDate >= periodStart;
             }).sort((a, b) => new Date(b.date) - new Date(a.date));
             
-            if (periodRecords.length === 0) {
-                alert('لا توجد مبيعات في هذه الفترة');
+            // Filter purchases for this period
+            const periodPurchases = purchases.filter(p => {
+                const purchaseDate = new Date(p.date);
+                return purchaseDate >= periodStart;
+            }).sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (periodRecords.length === 0 && periodPurchases.length === 0) {
+                alert('لا توجد عمليات في هذه الفترة');
                 return;
             }
             
@@ -1725,6 +1804,8 @@
             let totalRevenue = 0;
             let totalDebt = 0;
             let totalGrams = 0;
+            let totalPurchasedGrams = 0;
+            let totalPurchasedAmount = 0;
             
             periodRecords.forEach(record => {
                 const totalPaid = getTotalPaid(record);
@@ -1737,6 +1818,11 @@
                 totalGrams += record.grams;
             });
             
+            periodPurchases.forEach(purchase => {
+                totalPurchasedGrams += purchase.grams;
+                totalPurchasedAmount += purchase.price;
+            });
+            
             // Update modal title
             const periodName = days === 1 ? 'آخر 24 ساعة' : days === 7 ? 'آخر 7 أيام' : days === 14 ? 'آخر 14 يوم' : 'آخر 30 يوم';
             document.getElementById('periodDetailsTitle').textContent = `📊 تفاصيل ${periodName}`;
@@ -1745,6 +1831,7 @@
             document.getElementById('periodTotalRevenue').textContent = formatCurrency(totalRevenue);
             document.getElementById('periodTotalDebt').textContent = formatCurrency(totalDebt);
             document.getElementById('periodTotalGrams').textContent = totalGrams.toFixed(2) + ' غ';
+            document.getElementById('periodTotalPurchased').textContent = totalPurchasedGrams.toFixed(2) + ' غ';
             
             // Build table
             const tableHTML = `
@@ -1802,6 +1889,69 @@
                     </tbody>
                 </table>
             `;
+            
+            // Add purchases table if there are any
+            if (periodPurchases.length > 0) {
+                tableHTML += `
+                    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
+                        <h3 style="color: #059669; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>🛒</span>
+                            <span>عمليات شراء الذهب (من العملاء)</span>
+                        </h3>
+                        <table class="sales-table">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                                    <th>التاريخ</th>
+                                    <th>العميل</th>
+                                    <th>رقم الهوية</th>
+                                    <th>الوزن (غ)</th>
+                                    <th>السعر المتفق</th>
+                                    <th>المدفوع</th>
+                                    <th>المتبقي</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${periodPurchases.map(purchase => {
+                                    const date = new Date(purchase.date);
+                                    const dateStr = date.toLocaleDateString('ar-DZ', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                    const customerName = `${purchase.firstName} ${purchase.lastName}`;
+                                    const remaining = purchase.remaining || 0;
+                                    const hasPaidFully = remaining <= 0;
+                                    
+                                    return `
+                                        <tr style="background: rgba(5, 150, 105, 0.05);">
+                                            <td>${dateStr}</td>
+                                            <td>
+                                                ${customerName}
+                                                ${purchase.employee ? '<br><span class="badge" style="background: #7c3aed; font-size: 0.75rem;">👤 ' + purchase.employee + '</span>' : ''}
+                                                ${purchase.phoneNumber ? '<br><small style="color: #059669;">📱 ' + purchase.phoneNumber + '</small>' : ''}
+                                            </td>
+                                            <td>${purchase.idNumber}</td>
+                                            <td style="color: #059669; font-weight: 600;">${purchase.grams.toFixed(2)}</td>
+                                            <td>${formatCurrency(purchase.price)}</td>
+                                            <td style="color: #059669;">${formatCurrency(purchase.paid)}</td>
+                                            <td class="${remaining > 0 ? 'due-amount' : 'paid-full'}">${formatCurrency(remaining)}</td>
+                                            <td>
+                                                ${hasPaidFully 
+                                                    ? '<span class="badge badge-success">مدفوع كاملا ✓</span>' 
+                                                    : `<span class="badge badge-warning">متبقي للدفع</span>`
+                                                }
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
             
             document.getElementById('periodDetailsTable').innerHTML = tableHTML;
             document.getElementById('periodDetailsModal').style.display = 'flex';
