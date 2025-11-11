@@ -41,6 +41,10 @@
                 <span class="tab-icon">💰</span>
                 <span>المدخرات</span>
             </button>
+            <button class="tab-btn" data-tab="purchases">
+                <span class="tab-icon">🔄</span>
+                <span>شراء الذهب</span>
+            </button>
         </div>
 
         <!-- Dashboard Tab -->
@@ -406,6 +410,90 @@
                 </div>
             </div>
         </div>
+
+        <!-- Gold Purchases Tab (Buy from Customers) -->
+        <div class="tab-content" id="purchases">
+            <div class="card">
+                <h2>🔄 شراء ذهب من عميل</h2>
+                <p class="subtitle" style="color: #64748b; margin-bottom: 1.5rem;">
+                    عندما يأتي عميل لبيع ذهب لك - أنت تشتري منه
+                </p>
+                
+                <form id="purchaseForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="purchaseFirstName">الاسم الأول</label>
+                            <input type="text" id="purchaseFirstName" name="purchaseFirstName" required placeholder="الاسم الأول">
+                        </div>
+                        <div class="form-group">
+                            <label for="purchaseLastName">اسم العائلة</label>
+                            <input type="text" id="purchaseLastName" name="purchaseLastName" required placeholder="اسم العائلة">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="purchaseIdNumber">رقم الهوية (اختياري)</label>
+                            <input type="text" id="purchaseIdNumber" name="purchaseIdNumber" placeholder="رقم الهوية الوطنية">
+                        </div>
+                        <div class="form-group">
+                            <label for="purchasePhoneNumber">رقم الهاتف 📱</label>
+                            <input type="tel" id="purchasePhoneNumber" name="purchasePhoneNumber" required placeholder="0555123456">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="purchaseGrams">الوزن (غرام)</label>
+                            <input type="number" id="purchaseGrams" name="purchaseGrams" required step="0.01" min="0.01" placeholder="0.00">
+                            <small style="display: block; margin-top: 0.5rem; color: #64748b;">
+                                ⚖️ وزن الذهب الذي يبيعه العميل لك
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="purchasePrice">السعر المتفق عليه (دج)</label>
+                            <input type="number" id="purchasePrice" name="purchasePrice" required step="0.01" min="0" placeholder="0.00">
+                            <small style="display: block; margin-top: 0.5rem; color: #64748b;">
+                                💰 السعر الذي ستدفعه للعميل
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="purchasePaid">المبلغ المدفوع للعميل (دج)</label>
+                        <input type="number" id="purchasePaid" name="purchasePaid" required step="0.01" min="0" placeholder="0.00">
+                        <small style="display: block; margin-top: 0.5rem; color: #64748b;">
+                            💵 المبلغ الذي دفعته للعميل الآن
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="purchaseNote">ملاحظة (اختياري)</label>
+                        <input type="text" id="purchaseNote" name="purchaseNote" placeholder="نوع الذهب، العيار، وصف القطعة، إلخ">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);">
+                        شراء الذهب 🔄
+                    </button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📋 سجل مشتريات الذهب</h2>
+                
+                <!-- Search Box -->
+                <div class="search-box" style="margin-bottom: 1.5rem;">
+                    <input type="text" 
+                           id="purchasesSearchInput" 
+                           placeholder="🔍 البحث بالاسم أو رقم الهاتف..." 
+                           style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;">
+                </div>
+                
+                <div id="purchasesListContainer">
+                    <p class="empty-message">لا توجد مشتريات مسجلة</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Period Details Modal -->
@@ -489,6 +577,7 @@
         }
 
         let records = [];
+        let purchases = []; // Gold purchases from customers
         let currentPaymentRecordId = null;
 
         // Tab switching
@@ -539,6 +628,18 @@
                         console.log('✅ Data loaded successfully:', records.length, 'records');
                     }
                 }
+                
+                // Load purchases (stored separately)
+                try {
+                    const purchasesStr = localStorage.getItem('gold_purchases');
+                    if (purchasesStr) {
+                        purchases = JSON.parse(purchasesStr);
+                        console.log('✅ Purchases loaded:', purchases.length, 'purchases');
+                    }
+                } catch (e) {
+                    console.warn('Could not load purchases:', e);
+                    purchases = [];
+                }
             } catch (error) {
                 console.error('Failed to load data:', error.message);
                 alert('فشل تحميل البيانات. قد تكون كلمة المرور غير صحيحة.');
@@ -550,6 +651,7 @@
             renderClientsList();
             renderCreditClients();
             renderSavingsClients();
+            renderPurchasesList();
         }
 
         // Calculate statistics
@@ -1709,6 +1811,154 @@
         window.closePeriodDetailsModal = function() {
             document.getElementById('periodDetailsModal').style.display = 'none';
         };
+
+        // Save purchases to localStorage
+        function savePurchases() {
+            try {
+                localStorage.setItem('gold_purchases', JSON.stringify(purchases));
+            } catch (error) {
+                console.error('Failed to save purchases:', error);
+                alert('فشل حفظ بيانات المشتريات');
+            }
+        }
+
+        // Purchase form submission
+        document.getElementById('purchaseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            
+            const purchaseIdNumber = formData.get('purchaseIdNumber').trim() || `AUTO_${Date.now()}`;
+            const purchasePhoneNumber = formData.get('purchasePhoneNumber').trim();
+            const purchaseGrams = parseFloat(formData.get('purchaseGrams'));
+            const purchasePrice = parseFloat(formData.get('purchasePrice'));
+            const purchasePaid = parseFloat(formData.get('purchasePaid'));
+            
+            if (purchasePaid > purchasePrice) {
+                alert('المبلغ المدفوع لا يمكن أن يكون أكبر من السعر المتفق عليه');
+                return;
+            }
+            
+            const newPurchase = {
+                id: Date.now().toString(),
+                firstName: formData.get('purchaseFirstName').trim(),
+                lastName: formData.get('purchaseLastName').trim(),
+                idNumber: purchaseIdNumber,
+                phoneNumber: purchasePhoneNumber,
+                grams: purchaseGrams,
+                price: purchasePrice,
+                paid: purchasePaid,
+                remaining: purchasePrice - purchasePaid,
+                date: new Date().toISOString(),
+                note: formData.get('purchaseNote').trim(),
+                employee: sessionStorage.getItem('user_role') === 'employee' ? 
+                         JSON.parse(sessionStorage.getItem('employee_data') || '{}').name : undefined
+            };
+            
+            purchases.unshift(newPurchase);
+            savePurchases();
+            renderPurchasesList();
+            
+            e.target.reset();
+            document.getElementById('purchaseFirstName').focus();
+            
+            const customerName = `${newPurchase.firstName} ${newPurchase.lastName}`;
+            const remainingAmount = newPurchase.remaining;
+            
+            alert(`تم تسجيل الشراء بنجاح! ✅\n\nالعميل: ${customerName}\nالوزن: ${purchaseGrams} غرام\nالسعر: ${formatCurrency(purchasePrice)}\nالمدفوع: ${formatCurrency(purchasePaid)}\n${remainingAmount > 0 ? 'المتبقي: ' + formatCurrency(remainingAmount) : 'مدفوع بالكامل ✓'}`);
+        });
+
+        // Search functionality for Purchases
+        let currentPurchasesFilter = '';
+        document.getElementById('purchasesSearchInput').addEventListener('input', (e) => {
+            currentPurchasesFilter = e.target.value.toLowerCase().trim();
+            renderPurchasesList();
+        });
+
+        // Render purchases list
+        function renderPurchasesList() {
+            const container = document.getElementById('purchasesListContainer');
+            
+            if (purchases.length === 0) {
+                container.innerHTML = '<p class="empty-message">لا توجد مشتريات مسجلة</p>';
+                return;
+            }
+            
+            let filteredPurchases = purchases;
+            
+            // Apply search filter
+            if (currentPurchasesFilter) {
+                filteredPurchases = purchases.filter(purchase => {
+                    const fullName = `${purchase.firstName} ${purchase.lastName}`.toLowerCase();
+                    const phone = (purchase.phoneNumber || '').toLowerCase();
+                    return fullName.includes(currentPurchasesFilter) || phone.includes(currentPurchasesFilter);
+                });
+            }
+            
+            if (filteredPurchases.length === 0) {
+                container.innerHTML = '<p class="empty-message">لا توجد نتائج</p>';
+                return;
+            }
+            
+            const table = document.createElement('table');
+            table.className = 'sales-table';
+            
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>العميل</th>
+                        <th>رقم الهوية</th>
+                        <th>الوزن (غ)</th>
+                        <th>السعر المتفق</th>
+                        <th>المدفوع</th>
+                        <th>المتبقي</th>
+                        <th>الحالة</th>
+                        <th>ملاحظة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${filteredPurchases.map(purchase => {
+                        const date = new Date(purchase.date);
+                        const dateStr = date.toLocaleDateString('ar-DZ', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        const customerName = `${purchase.firstName} ${purchase.lastName}`;
+                        const hasPaidFully = purchase.remaining <= 0;
+                        
+                        return `
+                            <tr style="background: ${hasPaidFully ? '#f0fdf4' : '#fff7ed'};">
+                                <td>${dateStr}</td>
+                                <td>
+                                    ${customerName}
+                                    ${purchase.employee ? '<br><span class="badge" style="background: #7c3aed; font-size: 0.75rem;">👤 ' + purchase.employee + '</span>' : ''}
+                                    ${purchase.phoneNumber ? '<br><small style="color: #0c8599;">📱 ' + purchase.phoneNumber + '</small>' : ''}
+                                </td>
+                                <td>${purchase.idNumber}</td>
+                                <td style="font-weight: 600; color: #0891b2;">${purchase.grams.toFixed(2)}</td>
+                                <td>${formatCurrency(purchase.price)}</td>
+                                <td>${formatCurrency(purchase.paid)}</td>
+                                <td class="${purchase.remaining > 0 ? 'due-amount' : 'paid-full'}">${formatCurrency(purchase.remaining)}</td>
+                                <td>
+                                    ${hasPaidFully 
+                                        ? '<span class="badge badge-success">مدفوع ✓</span>' 
+                                        : '<span class="badge badge-warning">متبقي</span>'
+                                    }
+                                </td>
+                                <td>${purchase.note || '-'}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            `;
+            
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
 
         // Initialize
         loadData();
