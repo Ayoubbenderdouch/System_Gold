@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>موظف - إدارة مبيعات الذهب</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📋 نظام الموظف - مبيعات الذهب</h1>
+            <div class="header-actions">
+                <button id="lockBtn" class="btn btn-danger">
+                    🔒 تسجيل خروج
+                </button>
+            </div>
+        </header>
+
+        <!-- Employee Sales Form -->
+        <div class="card">
+            <h2>إضافة عملية بيع جديدة</h2>
+            <div class="employee-info" style="background: #e7f5ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <p style="margin: 0; color: #1971c2;">
+                    👤 مسجل الدخول كموظف: <strong id="employeeName"></strong>
+                </p>
+            </div>
+            
+            <form id="employeeSalesForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">الاسم الأول</label>
+                        <input type="text" id="firstName" name="firstName" required placeholder="الاسم الأول">
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">اسم العائلة</label>
+                        <input type="text" id="lastName" name="lastName" required placeholder="اسم العائلة">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="idNumber">رقم الهوية (اختياري)</label>
+                        <input type="text" id="idNumber" name="idNumber" placeholder="رقم الهوية الوطنية">
+                    </div>
+                    <div class="form-group">
+                        <label for="phoneNumber">رقم الهاتف 📱 (اختياري)</label>
+                        <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="0555123456">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="grams">الوزن (غرام)</label>
+                        <input type="number" id="grams" name="grams" required step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="price">السعر الإجمالي (دج)</label>
+                        <input type="number" id="price" name="price" required step="0.01" min="0" placeholder="0.00">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="paid">المبلغ المدفوع (دج)</label>
+                    <input type="number" id="paid" name="paid" required step="0.01" min="0" placeholder="0.00">
+                    <small style="display: block; margin-top: 0.5rem; color: #64748b;">
+                        💡 إذا كان المبلغ أقل من السعر، سيتم إضافة دين للعميل تلقائياً
+                    </small>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">إضافة العملية ➕</button>
+            </form>
+        </div>
+
+        <!-- Today's Sales Summary -->
+        <div class="card">
+            <h2>مبيعاتي اليوم 📊</h2>
+            <div id="todaySummary" class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🛍️</div>
+                    <div class="stat-info">
+                        <div class="stat-label">عدد العمليات</div>
+                        <div class="stat-value" id="todayCount">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <div class="stat-label">إجمالي المبيعات</div>
+                        <div class="stat-value" id="todayRevenue">0 دج</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⚖️</div>
+                    <div class="stat-info">
+                        <div class="stat-label">الذهب المباع</div>
+                        <div class="stat-value" id="todayGrams">0 غ</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Sales List -->
+        <div class="card">
+            <h2>سجل مبيعاتي اليوم</h2>
+            <div id="todaySalesContainer">
+                <p class="empty-message">لا توجد مبيعات اليوم بعد</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { encryptJSON, decryptJSON } from './crypto.js';
+        import { saveVault, loadVault } from './store.js';
+        import { formatCurrency } from './app.js';
+
+        // Check authentication
+        const employeeData = sessionStorage.getItem('employee_data');
+        if (!employeeData) {
+            window.location.href = 'index.html';
+            throw new Error('Unauthorized');
+        }
+
+        const employee = JSON.parse(employeeData);
+        const adminPassword = sessionStorage.getItem('vault_pass');
+        
+        if (!adminPassword) {
+            sessionStorage.removeItem('employee_data');
+            window.location.href = 'index.html';
+            throw new Error('No admin password');
+        }
+
+        // Display employee name
+        document.getElementById('employeeName').textContent = employee.name;
+
+        let allRecords = [];
+        let myRecords = [];
+
+        // Load data
+        async function loadData() {
+            try {
+                const blob = await loadVault();
+                if (blob) {
+                    const decrypted = await decryptJSON(blob, adminPassword);
+                    if (Array.isArray(decrypted)) {
+                        allRecords = decrypted;
+                        
+                        // Filter only my sales
+                        myRecords = allRecords.filter(r => r.employee === employee.name);
+                        
+                        renderTodaySummary();
+                        renderTodaySales();
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                alert('فشل تحميل البيانات');
+            }
+        }
+
+        // Save data
+        async function saveData() {
+            try {
+                const encrypted = await encryptJSON(allRecords, adminPassword);
+                await saveVault(encrypted, adminPassword);
+            } catch (error) {
+                console.error('Failed to save:', error);
+                alert('فشل حفظ البيانات');
+                throw error;
+            }
+        }
+
+        // Render today's summary
+        function renderTodaySummary() {
+            const today = new Date().toDateString();
+            const todaySales = myRecords.filter(r => {
+                const saleDate = new Date(r.date).toDateString();
+                return saleDate === today;
+            });
+
+            const count = todaySales.length;
+            const revenue = todaySales.reduce((sum, r) => sum + r.price, 0);
+            const grams = todaySales.reduce((sum, r) => sum + r.grams, 0);
+
+            document.getElementById('todayCount').textContent = count;
+            document.getElementById('todayRevenue').textContent = formatCurrency(revenue);
+            document.getElementById('todayGrams').textContent = grams.toFixed(2) + ' غ';
+        }
+
+        // Render today's sales list
+        function renderTodaySales() {
+            const container = document.getElementById('todaySalesContainer');
+            const today = new Date().toDateString();
+            
+            const todaySales = myRecords.filter(r => {
+                const saleDate = new Date(r.date).toDateString();
+                return saleDate === today;
+            }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (todaySales.length === 0) {
+                container.innerHTML = '<p class="empty-message">لا توجد مبيعات اليوم بعد</p>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'sales-table';
+            
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>الوقت</th>
+                        <th>العميل</th>
+                        <th>الوزن (غ)</th>
+                        <th>السعر</th>
+                        <th>المدفوع</th>
+                        <th>المتبقي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${todaySales.map(record => {
+                        const date = new Date(record.date);
+                        const timeStr = date.toLocaleTimeString('ar-DZ', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        const customerName = `${record.firstName} ${record.lastName}`;
+                        const due = record.price - record.paid;
+                        
+                        return `
+                            <tr>
+                                <td>${timeStr}</td>
+                                <td>
+                                    ${customerName}
+                                    ${record.phoneNumber ? '<br><small style="color: #0c8599;">📱 ' + record.phoneNumber + '</small>' : ''}
+                                </td>
+                                <td>${record.grams.toFixed(2)}</td>
+                                <td>${formatCurrency(record.price)}</td>
+                                <td>${formatCurrency(record.paid)}</td>
+                                <td class="${due > 0 ? 'due-amount' : 'paid-full'}">${formatCurrency(due)}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            `;
+            
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+
+        // Form submission
+        document.getElementById('employeeSalesForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            
+            // Generate unique ID if not provided
+            const idNumber = formData.get('idNumber').trim() || `AUTO_${Date.now()}`;
+            const phoneNumber = formData.get('phoneNumber').trim() || '';
+            
+            const newRecord = {
+                id: Date.now().toString(),
+                firstName: formData.get('firstName').trim(),
+                lastName: formData.get('lastName').trim(),
+                idNumber: idNumber,
+                phoneNumber: phoneNumber,
+                grams: parseFloat(formData.get('grams')),
+                price: parseFloat(formData.get('price')),
+                paid: parseFloat(formData.get('paid')),
+                date: new Date().toISOString(),
+                payments: [],
+                employee: employee.name  // Track who made the sale
+            };
+
+            // Add to records
+            allRecords.unshift(newRecord);
+            myRecords.unshift(newRecord);
+            
+            // Save
+            try {
+                await saveData();
+                renderTodaySummary();
+                renderTodaySales();
+                e.target.reset();
+                document.getElementById('firstName').focus();
+                
+                // Success message
+                const due = newRecord.price - newRecord.paid;
+                const message = due > 0 
+                    ? `تم إضافة العملية ✅\nالمبلغ المتبقي: ${formatCurrency(due)}`
+                    : 'تم إضافة العملية بنجاح ✅';
+                alert(message);
+            } catch (error) {
+                alert('فشل حفظ البيانات. الرجاء المحاولة مرة أخرى.');
+            }
+        });
+
+        // Lock functionality
+        document.getElementById('lockBtn').addEventListener('click', () => {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                sessionStorage.removeItem('employee_data');
+                sessionStorage.removeItem('vault_pass');
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>

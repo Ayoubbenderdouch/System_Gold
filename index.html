@@ -10,25 +10,76 @@
     <div class="container">
         <div class="card">
             <h1>🔒 خزنة مبيعات الذهب</h1>
-            <p class="subtitle">أدخل كلمة المرور الرئيسية للوصول إلى بياناتك المشفرة</p>
+            <p class="subtitle">اختر نوع الحساب وأدخل كلمة المرور</p>
             
-            <form id="loginForm">
+            <!-- Role Selection -->
+            <div id="roleSelection" class="role-selection">
+                <button type="button" class="role-btn" data-role="admin">
+                    <div class="role-icon">👑</div>
+                    <div class="role-title">المدير</div>
+                    <div class="role-desc">الوصول الكامل لجميع البيانات</div>
+                </button>
+                <button type="button" class="role-btn" data-role="employee">
+                    <div class="role-icon">👤</div>
+                    <div class="role-title">موظف</div>
+                    <div class="role-desc">إضافة المبيعات فقط</div>
+                </button>
+            </div>
+            
+            <!-- Admin Login Form -->
+            <form id="adminLoginForm" style="display: none;">
+                <h2>تسجيل دخول المدير 👑</h2>
                 <div class="form-group">
-                    <label for="masterPassword">كلمة المرور الرئيسية</label>
+                    <label for="adminPassword">كلمة المرور الرئيسية</label>
                     <input 
                         type="password" 
-                        id="masterPassword" 
-                        name="masterPassword"
+                        id="adminPassword" 
+                        name="adminPassword"
                         required 
                         autocomplete="current-password"
                         placeholder="أدخل كلمة المرور الرئيسية"
                     >
                 </div>
                 
-                <div id="lockoutMessage" class="error-message" style="display: none;"></div>
-                <div id="errorMessage" class="error-message" style="display: none;"></div>
+                <div id="adminErrorMessage" class="error-message" style="display: none;"></div>
+                <div id="adminLockoutMessage" class="error-message" style="display: none;"></div>
                 
-                <button type="submit" id="loginButton" class="btn btn-primary">دخول</button>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" id="adminLoginButton" class="btn btn-primary">دخول</button>
+                    <button type="button" id="backFromAdmin" class="btn btn-secondary">رجوع</button>
+                </div>
+            </form>
+            
+            <!-- Employee Login Form -->
+            <form id="employeeLoginForm" style="display: none;">
+                <h2>تسجيل دخول الموظف 👤</h2>
+                <div class="form-group">
+                    <label for="employeeName">اسم الموظف</label>
+                    <input 
+                        type="text" 
+                        id="employeeName" 
+                        name="employeeName"
+                        required 
+                        placeholder="أدخل اسمك"
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="employeePassword">كلمة المرور</label>
+                    <input 
+                        type="password" 
+                        id="employeePassword" 
+                        name="employeePassword"
+                        required 
+                        placeholder="أدخل كلمة مرور الموظف"
+                    >
+                </div>
+                
+                <div id="employeeErrorMessage" class="error-message" style="display: none;"></div>
+                
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" id="employeeLoginButton" class="btn btn-primary">دخول</button>
+                    <button type="button" id="backFromEmployee" class="btn btn-secondary">رجوع</button>
+                </div>
             </form>
             
             <div class="info-box">
@@ -45,99 +96,206 @@
 
     <script type="module">
         import { canEnterNow, registerAttempt, lockInfo } from './app.js';
+        import { encryptJSON, decryptJSON } from './crypto.js';
 
-        const form = document.getElementById('loginForm');
-        const passwordInput = document.getElementById('masterPassword');
-        const loginButton = document.getElementById('loginButton');
-        const errorMessage = document.getElementById('errorMessage');
-        const lockoutMessage = document.getElementById('lockoutMessage');
+        // Get employee password from config (in real app, this should be in encrypted config)
+        const EMPLOYEE_PASSWORD = 'employee123'; // You can change this!
 
-        // Check lockout status on load
-        function updateLockoutUI() {
+        // Elements
+        const roleSelection = document.getElementById('roleSelection');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const employeeLoginForm = document.getElementById('employeeLoginForm');
+        const backFromAdmin = document.getElementById('backFromAdmin');
+        const backFromEmployee = document.getElementById('backFromEmployee');
+
+        // Role selection
+        document.querySelectorAll('.role-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const role = btn.dataset.role;
+                roleSelection.style.display = 'none';
+                
+                if (role === 'admin') {
+                    adminLoginForm.style.display = 'block';
+                    document.getElementById('adminPassword').focus();
+                } else {
+                    employeeLoginForm.style.display = 'block';
+                    document.getElementById('employeeName').focus();
+                }
+            });
+        });
+
+        // Back buttons
+        backFromAdmin.addEventListener('click', () => {
+            adminLoginForm.style.display = 'none';
+            roleSelection.style.display = 'grid';
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('adminErrorMessage').style.display = 'none';
+        });
+
+        backFromEmployee.addEventListener('click', () => {
+            employeeLoginForm.style.display = 'none';
+            roleSelection.style.display = 'grid';
+            document.getElementById('employeeName').value = '';
+            document.getElementById('employeePassword').value = '';
+            document.getElementById('employeeErrorMessage').style.display = 'none';
+        });
+
+        // Check admin lockout status
+        function updateAdminLockoutUI() {
             const canEnter = canEnterNow();
+            const adminLoginButton = document.getElementById('adminLoginButton');
+            const adminPasswordInput = document.getElementById('adminPassword');
+            const adminErrorMessage = document.getElementById('adminErrorMessage');
+            const adminLockoutMessage = document.getElementById('adminLockoutMessage');
             
             if (!canEnter) {
                 const info = lockInfo();
-                loginButton.disabled = true;
-                passwordInput.disabled = true;
-                lockoutMessage.style.display = 'block';
-                lockoutMessage.textContent = `تم قفل الدخول. المحاولات الفاشلة: ${info.attempts}. الوقت المتبقي: ${info.minutesLeft} دقيقة.`;
-                errorMessage.style.display = 'none';
+                adminLoginButton.disabled = true;
+                adminPasswordInput.disabled = true;
+                adminLockoutMessage.style.display = 'block';
+                adminLockoutMessage.textContent = `تم قفل الدخول. المحاولات الفاشلة: ${info.attempts}. الوقت المتبقي: ${info.minutesLeft} دقيقة.`;
+                adminErrorMessage.style.display = 'none';
                 
-                // Check again in 1 minute
-                setTimeout(updateLockoutUI, 60000);
+                setTimeout(updateAdminLockoutUI, 60000);
             } else {
-                loginButton.disabled = false;
-                passwordInput.disabled = false;
-                lockoutMessage.style.display = 'none';
+                adminLoginButton.disabled = false;
+                adminPasswordInput.disabled = false;
+                adminLockoutMessage.style.display = 'none';
                 
                 const info = lockInfo();
                 if (info.attempts > 0) {
-                    errorMessage.style.display = 'block';
-                    errorMessage.textContent = `تحذير: ${info.attempts} محاولة فاشلة. سيتم القفل بعد ${5 - info.attempts} محاولات إضافية.`;
+                    adminErrorMessage.style.display = 'block';
+                    adminErrorMessage.textContent = `تحذير: ${info.attempts} محاولة فاشلة. سيتم القفل بعد ${5 - info.attempts} محاولات إضافية.`;
                 }
             }
         }
 
-        updateLockoutUI();
+        updateAdminLockoutUI();
 
-        form.addEventListener('submit', async (e) => {
+        // Admin login
+        adminLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             if (!canEnterNow()) {
                 return;
             }
             
-            const password = passwordInput.value.trim();
+            const password = document.getElementById('adminPassword').value.trim();
+            const adminErrorMessage = document.getElementById('adminErrorMessage');
+            const adminLoginButton = document.getElementById('adminLoginButton');
             
             if (!password) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'الرجاء إدخال كلمة المرور';
+                adminErrorMessage.style.display = 'block';
+                adminErrorMessage.textContent = 'الرجاء إدخال كلمة المرور';
                 return;
             }
             
-            loginButton.disabled = true;
-            loginButton.textContent = 'جاري التحقق...';
-            errorMessage.style.display = 'none';
+            adminLoginButton.disabled = true;
+            adminLoginButton.textContent = 'جاري التحقق...';
+            adminErrorMessage.style.display = 'none';
             
             try {
-                // Simple validation - just check if Web Crypto API exists
                 if (!window.crypto || !window.crypto.subtle) {
                     throw new Error('Web Crypto API not supported');
                 }
                 
-                // Store password in sessionStorage
+                // Store admin password
                 sessionStorage.setItem('vault_pass', password);
+                sessionStorage.setItem('user_role', 'admin');
                 
-                // Register successful attempt
                 registerAttempt(true);
-                
-                // Redirect to sales page
                 window.location.href = './sales.html';
                 
             } catch (error) {
-                console.error('Login error:', error.message);
-                
-                // Register failed attempt
+                console.error('Admin login error:', error.message);
                 registerAttempt(false);
-                
-                // Update UI
-                updateLockoutUI();
+                updateAdminLockoutUI();
                 
                 if (canEnterNow()) {
-                    errorMessage.style.display = 'block';
+                    adminErrorMessage.style.display = 'block';
                     const info = lockInfo();
-                    if (info.attempts === 0) {
-                        errorMessage.textContent = 'كلمة مرور غير صحيحة';
-                    } else {
-                        errorMessage.textContent = `كلمة مرور غير صحيحة. المحاولات الفاشلة: ${info.attempts}/5`;
-                    }
+                    adminErrorMessage.textContent = info.attempts === 0 
+                        ? 'كلمة مرور غير صحيحة'
+                        : `كلمة مرور غير صحيحة. المحاولات الفاشلة: ${info.attempts}/5`;
                 }
                 
-                loginButton.disabled = false;
-                loginButton.textContent = 'دخول';
-                passwordInput.value = '';
-                passwordInput.focus();
+                adminLoginButton.disabled = false;
+                adminLoginButton.textContent = 'دخول';
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('adminPassword').focus();
+            }
+        });
+
+        // Employee login
+        employeeLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const employeeName = document.getElementById('employeeName').value.trim();
+            const employeePassword = document.getElementById('employeePassword').value.trim();
+            const employeeErrorMessage = document.getElementById('employeeErrorMessage');
+            const employeeLoginButton = document.getElementById('employeeLoginButton');
+            
+            if (!employeeName || !employeePassword) {
+                employeeErrorMessage.style.display = 'block';
+                employeeErrorMessage.textContent = 'الرجاء إدخال جميع البيانات';
+                return;
+            }
+            
+            employeeLoginButton.disabled = true;
+            employeeLoginButton.textContent = 'جاري التحقق...';
+            employeeErrorMessage.style.display = 'none';
+            
+            try {
+                // Check employee password
+                if (employeePassword !== EMPLOYEE_PASSWORD) {
+                    throw new Error('Invalid employee password');
+                }
+                
+                // Store employee data (need admin password to save data)
+                const adminPassword = prompt('يرجى من المدير إدخال كلمة المرور الرئيسية لتفعيل حساب الموظف:');
+                
+                if (!adminPassword) {
+                    throw new Error('Admin password required');
+                }
+                
+                // Verify admin password works
+                try {
+                    await crypto.subtle.importKey(
+                        'raw',
+                        new TextEncoder().encode(adminPassword),
+                        { name: 'PBKDF2' },
+                        false,
+                        ['deriveBits', 'deriveKey']
+                    );
+                } catch {
+                    throw new Error('Invalid admin password');
+                }
+                
+                // Store session data
+                sessionStorage.setItem('vault_pass', adminPassword);
+                sessionStorage.setItem('user_role', 'employee');
+                sessionStorage.setItem('employee_data', JSON.stringify({
+                    name: employeeName
+                }));
+                
+                window.location.href = './employee.html';
+                
+            } catch (error) {
+                console.error('Employee login error:', error.message);
+                
+                employeeErrorMessage.style.display = 'block';
+                if (error.message === 'Invalid employee password') {
+                    employeeErrorMessage.textContent = 'كلمة مرور الموظف غير صحيحة';
+                } else if (error.message === 'Admin password required') {
+                    employeeErrorMessage.textContent = 'يجب إدخال كلمة المرور الرئيسية';
+                } else if (error.message === 'Invalid admin password') {
+                    employeeErrorMessage.textContent = 'كلمة المرور الرئيسية غير صحيحة';
+                } else {
+                    employeeErrorMessage.textContent = 'فشل تسجيل الدخول';
+                }
+                
+                employeeLoginButton.disabled = false;
+                employeeLoginButton.textContent = 'دخول';
             }
         });
     </script>
