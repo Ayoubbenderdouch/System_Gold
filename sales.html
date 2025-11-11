@@ -90,9 +90,10 @@
             <div class="card">
                 <h2>📊 إحصائيات العملاء حسب الفترة</h2>
                 <div class="period-stats">
-                    <div class="period-card">
+                    <div class="period-card" onclick="showPeriodDetails(1)" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                         <div class="period-header">
                             <h3>📅 آخر 24 ساعة</h3>
+                            <small style="color: #64748b; font-size: 0.85rem;">👆 انقر لرؤية التفاصيل</small>
                         </div>
                         <div class="period-content">
                             <div class="period-item">
@@ -110,9 +111,10 @@
                         </div>
                     </div>
 
-                    <div class="period-card">
+                    <div class="period-card" onclick="showPeriodDetails(7)" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                         <div class="period-header">
                             <h3>📅 آخر 7 أيام</h3>
+                            <small style="color: #64748b; font-size: 0.85rem;">👆 انقر لرؤية التفاصيل</small>
                         </div>
                         <div class="period-content">
                             <div class="period-item">
@@ -130,9 +132,10 @@
                         </div>
                     </div>
 
-                    <div class="period-card">
+                    <div class="period-card" onclick="showPeriodDetails(14)" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                         <div class="period-header">
                             <h3>📅 آخر 14 يوم</h3>
+                            <small style="color: #64748b; font-size: 0.85rem;">👆 انقر لرؤية التفاصيل</small>
                         </div>
                         <div class="period-content">
                             <div class="period-item">
@@ -150,9 +153,10 @@
                         </div>
                     </div>
 
-                    <div class="period-card">
+                    <div class="period-card" onclick="showPeriodDetails(30)" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                         <div class="period-header">
                             <h3>📅 آخر 30 يوم</h3>
+                            <small style="color: #64748b; font-size: 0.85rem;">👆 انقر لرؤية التفاصيل</small>
                         </div>
                         <div class="period-content">
                             <div class="period-item">
@@ -400,6 +404,45 @@
                 <div id="savingsClientsContainer">
                     <p class="empty-message">لا توجد مدخرات مسجلة</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Details Modal -->
+    <div id="periodDetailsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2 id="periodDetailsTitle">📊 تفاصيل الفترة</h2>
+                <button class="modal-close" onclick="closePeriodDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Summary Cards -->
+                <div class="stats-grid" style="margin-bottom: 2rem;">
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon">💵</div>
+                        <div class="stat-info">
+                            <div class="stat-label">إجمالي الإيرادات</div>
+                            <div class="stat-value" id="periodTotalRevenue">0 دج</div>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon">💳</div>
+                        <div class="stat-info">
+                            <div class="stat-label">إجمالي الديون</div>
+                            <div class="stat-value" id="periodTotalDebt">0 دج</div>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-info">
+                        <div class="stat-icon">⚖️</div>
+                        <div class="stat-info">
+                            <div class="stat-label">الذهب المباع</div>
+                            <div class="stat-value" id="periodTotalGrams">0 غ</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Detailed Table -->
+                <div id="periodDetailsTable"></div>
             </div>
         </div>
     </div>
@@ -1558,6 +1601,113 @@
                 
                 alert(`✅ تم تعبئة بيانات العميل!\n\nالمبلغ المدخر (${formatCurrency(totalSaved)}) تم إدراجه كمبلغ مدفوع.\n\nأدخل الآن وزن الذهب والسعر الإجمالي لإتمام البيع.`);
             }
+        };
+
+        // Show period details
+        window.showPeriodDetails = function(days) {
+            const now = new Date();
+            const periodStart = new Date(now - days * 24 * 60 * 60 * 1000);
+            
+            // Filter records for this period
+            const periodRecords = records.filter(r => {
+                const recordDate = new Date(r.date);
+                return recordDate >= periodStart;
+            }).sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (periodRecords.length === 0) {
+                alert('لا توجد مبيعات في هذه الفترة');
+                return;
+            }
+            
+            // Calculate totals
+            let totalRevenue = 0;
+            let totalDebt = 0;
+            let totalGrams = 0;
+            
+            periodRecords.forEach(record => {
+                const totalPaid = getTotalPaid(record);
+                const debt = record.price - totalPaid;
+                
+                if (totalPaid >= 0) {
+                    totalRevenue += totalPaid;
+                    totalDebt += debt;
+                }
+                totalGrams += record.grams;
+            });
+            
+            // Update modal title
+            const periodName = days === 1 ? 'آخر 24 ساعة' : days === 7 ? 'آخر 7 أيام' : days === 14 ? 'آخر 14 يوم' : 'آخر 30 يوم';
+            document.getElementById('periodDetailsTitle').textContent = `📊 تفاصيل ${periodName}`;
+            
+            // Update summary cards
+            document.getElementById('periodTotalRevenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('periodTotalDebt').textContent = formatCurrency(totalDebt);
+            document.getElementById('periodTotalGrams').textContent = totalGrams.toFixed(2) + ' غ';
+            
+            // Build table
+            const tableHTML = `
+                <table class="sales-table">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>العميل</th>
+                            <th>رقم الهوية</th>
+                            <th>الوزن (غ)</th>
+                            <th>السعر</th>
+                            <th>المدفوع</th>
+                            <th>المتبقي</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${periodRecords.map(record => {
+                            const date = new Date(record.date);
+                            const dateStr = date.toLocaleDateString('ar-DZ', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            const customerName = `${record.firstName} ${record.lastName}`;
+                            const totalPaid = getTotalPaid(record);
+                            const due = record.price - totalPaid;
+                            const hasPaidFully = due <= 0;
+                            const isCreditOnly = record.isCreditOnly === true;
+                            
+                            return `
+                                <tr class="${isCreditOnly ? 'credit-only-row' : ''}">
+                                    <td>${dateStr}</td>
+                                    <td>
+                                        ${customerName}
+                                        ${record.employee ? '<br><span class="badge" style="background: #7c3aed; font-size: 0.75rem;">👤 ' + record.employee + '</span>' : ''}
+                                        ${record.phoneNumber ? '<br><small style="color: #0c8599;">📱 ' + record.phoneNumber + '</small>' : ''}
+                                    </td>
+                                    <td>${record.idNumber}</td>
+                                    <td>${record.grams > 0 ? record.grams.toFixed(2) : '-'}</td>
+                                    <td>${formatCurrency(record.price)}</td>
+                                    <td>${formatCurrency(totalPaid)}</td>
+                                    <td class="${due > 0 ? 'due-amount' : 'paid-full'}">${formatCurrency(due)}</td>
+                                    <td>
+                                        ${hasPaidFully 
+                                            ? '<span class="badge badge-success">مدفوع ✓</span>' 
+                                            : `<span class="badge badge-warning">دين</span>`
+                                        }
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('periodDetailsTable').innerHTML = tableHTML;
+            document.getElementById('periodDetailsModal').style.display = 'flex';
+        };
+
+        // Close period details modal
+        window.closePeriodDetailsModal = function() {
+            document.getElementById('periodDetailsModal').style.display = 'none';
         };
 
         // Initialize
