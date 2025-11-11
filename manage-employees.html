@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الموظفين</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>👥 إدارة الموظفين</h1>
+            <div class="header-actions">
+                <button onclick="window.location.href='sales.html'" class="btn btn-secondary">
+                    ← العودة للوحة التحكم
+                </button>
+                <button id="lockBtn" class="btn btn-danger">
+                    🔒 تسجيل خروج
+                </button>
+            </div>
+        </header>
+
+        <!-- Add Employee Card -->
+        <div class="card">
+            <h2>➕ إضافة موظف جديد</h2>
+            <form id="addEmployeeForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="employeeName">اسم الموظف</label>
+                        <input type="text" id="employeeName" name="employeeName" required placeholder="مثال: أحمد، محمد، علي">
+                    </div>
+                    <div class="form-group">
+                        <label for="employeePassword">كلمة المرور</label>
+                        <input type="text" id="employeePassword" name="employeePassword" required placeholder="اختر كلمة مرور للموظف">
+                        <small style="display: block; margin-top: 0.5rem; color: #64748b;">
+                            💡 سيستخدم الموظف هذه الكلمة للدخول إلى النظام
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="employeePhone">رقم الهاتف (اختياري)</label>
+                    <input type="tel" id="employeePhone" name="employeePhone" placeholder="0555123456">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">إضافة الموظف ➕</button>
+            </form>
+        </div>
+
+        <!-- Employees List -->
+        <div class="card">
+            <h2>📋 قائمة الموظفين</h2>
+            <div id="employeesListContainer">
+                <p class="empty-message">لا يوجد موظفين مسجلين بعد</p>
+            </div>
+        </div>
+
+        <!-- Employee Statistics -->
+        <div class="card">
+            <h2>📊 إحصائيات الموظفين</h2>
+            <div id="employeeStatsContainer">
+                <p class="empty-message">لا توجد إحصائيات متاحة</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Employee Modal -->
+    <div id="editEmployeeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ تعديل بيانات الموظف</h2>
+                <button class="close-modal" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editEmployeeForm">
+                <input type="hidden" id="editEmployeeId">
+                <div class="form-group">
+                    <label for="editEmployeeName">اسم الموظف</label>
+                    <input type="text" id="editEmployeeName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editEmployeePassword">كلمة المرور الجديدة</label>
+                    <input type="text" id="editEmployeePassword" required>
+                    <small style="display: block; margin-top: 0.5rem; color: #64748b;">
+                        💡 اترك فارغاً إذا كنت لا تريد تغيير كلمة المرور
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="editEmployeePhone">رقم الهاتف</label>
+                    <input type="tel" id="editEmployeePhone">
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { encryptJSON, decryptJSON } from './crypto.js';
+        import { formatCurrency } from './app.js';
+
+        // Check admin authentication
+        const adminPassword = sessionStorage.getItem('vault_pass');
+        const userRole = sessionStorage.getItem('user_role');
+        
+        if (!adminPassword || userRole !== 'admin') {
+            alert('يجب تسجيل الدخول كمدير');
+            window.location.href = 'index.html';
+            throw new Error('Unauthorized');
+        }
+
+        // Employees storage key
+        const EMPLOYEES_KEY = 'employees_data';
+        
+        let employees = [];
+        let salesRecords = [];
+
+        // Load employees from localStorage
+        function loadEmployees() {
+            try {
+                const stored = localStorage.getItem(EMPLOYEES_KEY);
+                if (stored) {
+                    employees = JSON.parse(stored);
+                }
+            } catch (error) {
+                console.error('Failed to load employees:', error);
+                employees = [];
+            }
+        }
+
+        // Save employees to localStorage
+        function saveEmployees() {
+            try {
+                localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(employees));
+            } catch (error) {
+                console.error('Failed to save employees:', error);
+                alert('فشل حفظ بيانات الموظفين');
+            }
+        }
+
+        // Load sales data to get employee statistics
+        async function loadSalesData() {
+            try {
+                const { loadVault } = await import('./store.js');
+                const blob = await loadVault();
+                if (blob) {
+                    const decrypted = await decryptJSON(blob, adminPassword);
+                    if (Array.isArray(decrypted)) {
+                        salesRecords = decrypted;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load sales data:', error);
+            }
+        }
+
+        // Render employees list
+        function renderEmployeesList() {
+            const container = document.getElementById('employeesListContainer');
+            
+            if (employees.length === 0) {
+                container.innerHTML = '<p class="empty-message">لا يوجد موظفين مسجلين بعد</p>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'sales-table';
+            
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>رقم الهاتف</th>
+                        <th>كلمة المرور</th>
+                        <th>تاريخ الإضافة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${employees.map(emp => {
+                        const addedDate = new Date(emp.addedDate);
+                        const dateStr = addedDate.toLocaleDateString('ar-DZ', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                        
+                        return `
+                            <tr>
+                                <td>
+                                    <strong>👤 ${emp.name}</strong>
+                                </td>
+                                <td>${emp.phone || '-'}</td>
+                                <td>
+                                    <code style="background: #f1f5f9; padding: 0.25rem 0.5rem; border-radius: 4px;">
+                                        ${emp.password}
+                                    </code>
+                                </td>
+                                <td>${dateStr}</td>
+                                <td>
+                                    <button onclick="editEmployee('${emp.id}')" class="btn btn-sm btn-secondary" style="margin-left: 0.5rem;">
+                                        ✏️ تعديل
+                                    </button>
+                                    <button onclick="deleteEmployee('${emp.id}', '${emp.name}')" class="btn btn-sm btn-danger">
+                                        🗑️ حذف
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            `;
+            
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+
+        // Render employee statistics
+        function renderEmployeeStats() {
+            const container = document.getElementById('employeeStatsContainer');
+            
+            if (employees.length === 0) {
+                container.innerHTML = '<p class="empty-message">لا توجد إحصائيات متاحة</p>';
+                return;
+            }
+
+            // Calculate stats for each employee
+            const employeeStats = employees.map(emp => {
+                const empSales = salesRecords.filter(r => r.employee === emp.name);
+                const totalSales = empSales.length;
+                const totalRevenue = empSales.reduce((sum, r) => sum + r.price, 0);
+                const totalGrams = empSales.reduce((sum, r) => sum + r.grams, 0);
+                
+                return {
+                    ...emp,
+                    totalSales,
+                    totalRevenue,
+                    totalGrams
+                };
+            }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+            container.innerHTML = `
+                <div class="stats-grid">
+                    ${employeeStats.map(stat => `
+                        <div class="stat-card" style="border-right: 4px solid #7c3aed;">
+                            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                                <div class="stat-icon" style="background: #ede9fe;">👤</div>
+                                <div style="margin-right: 1rem;">
+                                    <h3 style="margin: 0; color: #1e293b;">${stat.name}</h3>
+                                    ${stat.phone ? '<small style="color: #64748b;">📱 ' + stat.phone + '</small>' : ''}
+                                </div>
+                            </div>
+                            <div style="display: grid; gap: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;">عدد العمليات:</span>
+                                    <strong style="color: #2563eb;">${stat.totalSales}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;">إجمالي المبيعات:</span>
+                                    <strong style="color: #16a34a;">${formatCurrency(stat.totalRevenue)}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;">الذهب المباع:</span>
+                                    <strong style="color: #f59e0b;">${stat.totalGrams.toFixed(2)} غ</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Add employee
+        document.getElementById('addEmployeeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const name = formData.get('employeeName').trim();
+            const password = formData.get('employeePassword').trim();
+            const phone = formData.get('employeePhone').trim();
+            
+            // Check if name already exists
+            if (employees.some(emp => emp.name === name)) {
+                alert('يوجد موظف بنفس الاسم بالفعل. الرجاء اختيار اسم آخر.');
+                return;
+            }
+            
+            const newEmployee = {
+                id: Date.now().toString(),
+                name: name,
+                password: password,
+                phone: phone,
+                addedDate: new Date().toISOString()
+            };
+            
+            employees.push(newEmployee);
+            saveEmployees();
+            renderEmployeesList();
+            renderEmployeeStats();
+            
+            e.target.reset();
+            document.getElementById('employeeName').focus();
+            
+            alert(`تم إضافة الموظف بنجاح! ✅\n\nالاسم: ${name}\nكلمة المرور: ${password}\n\nيمكن للموظف الآن تسجيل الدخول باستخدام هذه البيانات.`);
+        });
+
+        // Edit employee
+        window.editEmployee = function(employeeId) {
+            const employee = employees.find(emp => emp.id === employeeId);
+            if (!employee) return;
+            
+            document.getElementById('editEmployeeId').value = employee.id;
+            document.getElementById('editEmployeeName').value = employee.name;
+            document.getElementById('editEmployeePassword').value = employee.password;
+            document.getElementById('editEmployeePhone').value = employee.phone || '';
+            
+            document.getElementById('editEmployeeModal').style.display = 'flex';
+        };
+
+        // Close edit modal
+        window.closeEditModal = function() {
+            document.getElementById('editEmployeeModal').style.display = 'none';
+            document.getElementById('editEmployeeForm').reset();
+        };
+
+        // Save edited employee
+        document.getElementById('editEmployeeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const employeeId = document.getElementById('editEmployeeId').value;
+            const newName = document.getElementById('editEmployeeName').value.trim();
+            const newPassword = document.getElementById('editEmployeePassword').value.trim();
+            const newPhone = document.getElementById('editEmployeePhone').value.trim();
+            
+            const employeeIndex = employees.findIndex(emp => emp.id === employeeId);
+            if (employeeIndex === -1) return;
+            
+            const oldName = employees[employeeIndex].name;
+            
+            // Check if new name conflicts with another employee
+            if (newName !== oldName && employees.some(emp => emp.name === newName)) {
+                alert('يوجد موظف آخر بنفس الاسم. الرجاء اختيار اسم آخر.');
+                return;
+            }
+            
+            employees[employeeIndex] = {
+                ...employees[employeeIndex],
+                name: newName,
+                password: newPassword,
+                phone: newPhone
+            };
+            
+            saveEmployees();
+            renderEmployeesList();
+            renderEmployeeStats();
+            closeEditModal();
+            
+            alert('تم تحديث بيانات الموظف بنجاح! ✅');
+        });
+
+        // Delete employee
+        window.deleteEmployee = function(employeeId, employeeName) {
+            const empSales = salesRecords.filter(r => r.employee === employeeName);
+            
+            let confirmMessage = `هل أنت متأكد من حذف الموظف "${employeeName}"؟`;
+            if (empSales.length > 0) {
+                confirmMessage += `\n\n⚠️ تحذير: هذا الموظف لديه ${empSales.length} عملية بيع مسجلة.\nسيبقى سجل مبيعاته، لكن لن يتمكن من تسجيل الدخول بعد الآن.`;
+            }
+            
+            if (!confirm(confirmMessage)) return;
+            
+            employees = employees.filter(emp => emp.id !== employeeId);
+            saveEmployees();
+            renderEmployeesList();
+            renderEmployeeStats();
+            
+            alert('تم حذف الموظف بنجاح');
+        };
+
+        // Lock functionality
+        document.getElementById('lockBtn').addEventListener('click', () => {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                sessionStorage.removeItem('vault_pass');
+                sessionStorage.removeItem('user_role');
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Initialize
+        async function init() {
+            loadEmployees();
+            await loadSalesData();
+            renderEmployeesList();
+            renderEmployeeStats();
+        }
+
+        init();
+    </script>
+</body>
+</html>

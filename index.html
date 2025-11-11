@@ -98,8 +98,23 @@
         import { canEnterNow, registerAttempt, lockInfo } from './app.js';
         import { encryptJSON, decryptJSON } from './crypto.js';
 
-        // Get employee password from config (in real app, this should be in encrypted config)
-        const EMPLOYEE_PASSWORD = 'employee123'; // You can change this!
+        // Load employees from localStorage
+        const EMPLOYEES_KEY = 'employees_data';
+        let employees = [];
+        
+        function loadEmployees() {
+            try {
+                const stored = localStorage.getItem(EMPLOYEES_KEY);
+                if (stored) {
+                    employees = JSON.parse(stored);
+                }
+            } catch (error) {
+                console.error('Failed to load employees:', error);
+                employees = [];
+            }
+        }
+        
+        loadEmployees();
 
         // Elements
         const roleSelection = document.getElementById('roleSelection');
@@ -246,36 +261,48 @@
             employeeErrorMessage.style.display = 'none';
             
             try {
+                // Find employee in database
+                const employee = employees.find(emp => emp.name === employeeName);
+                
+                if (!employee) {
+                    throw new Error('Employee not found');
+                }
+                
                 // Check employee password
-                if (employeePassword !== EMPLOYEE_PASSWORD) {
+                if (employeePassword !== employee.password) {
                     throw new Error('Invalid employee password');
                 }
                 
-                // Store employee data (need admin password to save data)
-                const adminPassword = prompt('يرجى من المدير إدخال كلمة المرور الرئيسية لتفعيل حساب الموظف:');
+                // For first-time login or if no admin password in session, ask for it
+                let adminPassword = sessionStorage.getItem('vault_pass');
                 
                 if (!adminPassword) {
-                    throw new Error('Admin password required');
-                }
-                
-                // Verify admin password works
-                try {
-                    await crypto.subtle.importKey(
-                        'raw',
-                        new TextEncoder().encode(adminPassword),
-                        { name: 'PBKDF2' },
-                        false,
-                        ['deriveBits', 'deriveKey']
-                    );
-                } catch {
-                    throw new Error('Invalid admin password');
+                    adminPassword = prompt('يرجى من المدير إدخال كلمة المرور الرئيسية لتفعيل حساب الموظف:');
+                    
+                    if (!adminPassword) {
+                        throw new Error('Admin password required');
+                    }
+                    
+                    // Verify admin password works
+                    try {
+                        await crypto.subtle.importKey(
+                            'raw',
+                            new TextEncoder().encode(adminPassword),
+                            { name: 'PBKDF2' },
+                            false,
+                            ['deriveBits', 'deriveKey']
+                        );
+                    } catch {
+                        throw new Error('Invalid admin password');
+                    }
                 }
                 
                 // Store session data
                 sessionStorage.setItem('vault_pass', adminPassword);
                 sessionStorage.setItem('user_role', 'employee');
                 sessionStorage.setItem('employee_data', JSON.stringify({
-                    name: employeeName
+                    name: employeeName,
+                    phone: employee.phone || ''
                 }));
                 
                 window.location.href = './employee.html';
@@ -284,7 +311,9 @@
                 console.error('Employee login error:', error.message);
                 
                 employeeErrorMessage.style.display = 'block';
-                if (error.message === 'Invalid employee password') {
+                if (error.message === 'Employee not found') {
+                    employeeErrorMessage.textContent = 'الموظف غير موجود. الرجاء التواصل مع المدير.';
+                } else if (error.message === 'Invalid employee password') {
                     employeeErrorMessage.textContent = 'كلمة مرور الموظف غير صحيحة';
                 } else if (error.message === 'Admin password required') {
                     employeeErrorMessage.textContent = 'يجب إدخال كلمة المرور الرئيسية';
