@@ -41,31 +41,30 @@ async function initSupabase() {
 /**
  * Get or create user ID based on password hash
  * This ensures same user ID across all devices with same password
- * @param {string} password - Master password (optional, uses stored hash if available)
+ * @param {string} password - Master password (REQUIRED for consistent ID)
  * @returns {Promise<string>}
  */
-async function getUserId(password = null) {
-    // Try to get stored user ID first
-    let userId = localStorage.getItem('vault_user_id');
+async function getUserId(password) {
+    if (!password) {
+        throw new Error('Password is required for user ID generation');
+    }
     
-    if (!userId && password) {
-        // Create user ID from password hash
-        // This ensures same ID on all devices with same password
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        // Use first 16 chars of hash as user ID
-        userId = 'user_' + hashHex.substring(0, 16);
+    // ALWAYS calculate from password hash - don't trust localStorage
+    // This ensures same ID on all devices with same password
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    // Use first 16 chars of hash as user ID
+    const userId = 'user_' + hashHex.substring(0, 16);
+    
+    // Save to localStorage for reference (but always recalculate from password)
+    const storedId = localStorage.getItem('vault_user_id');
+    if (storedId !== userId) {
+        console.log('🔄 User ID changed (different password or first time):', userId);
         localStorage.setItem('vault_user_id', userId);
-        console.log('🆔 User ID created from password hash:', userId);
-    } else if (!userId) {
-        // Fallback: device-specific ID (shouldn't happen normally)
-        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('vault_user_id', userId);
-        console.warn('⚠️ Using device-specific user ID (no password provided)');
     }
     
     return userId;
